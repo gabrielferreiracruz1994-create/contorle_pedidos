@@ -119,12 +119,24 @@
     <section id="sec-fluxo" class="hidden space-y-6">
       
       <div class="bg-slate-900 text-white rounded-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4 shadow-md">
-        <div class="flex items-center gap-3">
-          <label class="text-xs font-bold text-slate-400 uppercase">Mês de Análise:</label>
-          <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
-            <button onclick="navegarMes('filtro-mes-fluxo', -1); renderizarFluxo();" class="p-1.5 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-chevron-left"></i></button>
-            <input type="month" id="filtro-mes-fluxo" onchange="renderizarFluxo()" class="bg-transparent text-white p-1 text-sm font-bold focus:outline-none">
-            <button onclick="navegarMes('filtro-mes-fluxo', 1); renderizarFluxo();" class="p-1.5 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-chevron-right"></i></button>
+        
+        <div class="flex flex-wrap items-center gap-4">
+          <!-- SELETOR DE PERFIL DO FLUXO -->
+          <div class="flex flex-col">
+            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1"><i class="fa-solid fa-user-tag text-blue-400 mr-1"></i>Perfil / Titular</label>
+            <select id="filtro-perfil-fluxo" onchange="renderizarFluxo()" class="bg-slate-800 text-white font-bold text-xs p-2 rounded border border-slate-700 focus:outline-none cursor-pointer">
+              <option value="ALL">ALL - TODOS OS PERFIS</option>
+            </select>
+          </div>
+
+          <!-- SELETOR DE MÊS -->
+          <div class="flex flex-col">
+            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Mês de Análise</label>
+            <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
+              <button onclick="navegarMes('filtro-mes-fluxo', -1); renderizarFluxo();" class="p-1 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+              <input type="month" id="filtro-mes-fluxo" onchange="renderizarFluxo()" class="bg-transparent text-white p-0.5 text-xs font-bold focus:outline-none text-center">
+              <button onclick="navegarMes('filtro-mes-fluxo', 1); renderizarFluxo();" class="p-1 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+            </div>
           </div>
         </div>
 
@@ -283,7 +295,6 @@
           </div>
         </div>
 
-        <!-- LÓGICA INVERTIDA: VALOR DA PARCELA É O INPUT E TOTAL É CALCULADO -->
         <div class="grid grid-cols-2 gap-3 mt-2">
           <div>
             <label id="lbl_bill_installment" class="block text-xs font-semibold text-slate-600 mb-1">Valor da Parcela (R$) *</label>
@@ -408,6 +419,7 @@
 
         document.getElementById('saldo-inicial-input').value = saldoInicial.toFixed(2);
 
+        atualizarOpcoesFiltroPerfil();
         renderizarPedidos();
         renderizarCartoes();
         renderizarBills();
@@ -415,6 +427,17 @@
       } catch (e) {
         console.error("Erro ao inicializar dados:", e);
       }
+    }
+
+    function atualizarOpcoesFiltroPerfil() {
+      const sel = document.getElementById('filtro-perfil-fluxo');
+      if(!sel) return;
+      const valAtual = sel.value;
+      sel.innerHTML = '<option value="ALL">ALL - TODOS OS PERFIS</option>';
+      profiles.forEach(p => {
+        sel.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+      });
+      sel.value = valAtual || 'ALL';
     }
 
     async function salvarSaldoInicial() {
@@ -469,7 +492,7 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="p-3 font-bold">${p.client} <span class="text-xs font-normal text-slate-500 block">(${p.product})</span></td>
+          <td class="p-3 font-bold">${p.client} <span class="text-xs font-normal text-slate-500 block">(${p.product}) - <b>Perfil: ${p.entity}</b></span></td>
           <td class="p-3">
             <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${p.production_type === 'TERCEIRO' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-700'}">${p.production_type}</span>
             <div class="mt-1">${selectStatusInline}</div>
@@ -572,6 +595,7 @@
 
     function renderizarFluxo() {
       const mesAno = document.getElementById('filtro-mes-fluxo').value;
+      const perfilSel = document.getElementById('filtro-perfil-fluxo')?.value || 'ALL';
       const tbody = document.getElementById('tabela-cronograma-fluxo');
       if (!tbody) return;
       tbody.innerHTML = '';
@@ -579,31 +603,35 @@
       let lancamentos = [];
       let saldo = saldoInicial;
 
-      // 1. PEDIDOS DE CLIENTES
+      // 1. PEDIDOS DE CLIENTES (FILTRADOS POR PERFIL SE HOUVER)
       pedidos.forEach(p => {
+        if (perfilSel !== 'ALL' && p.entity !== perfilSel) return;
+
         const faltaReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
         const st = (p.status_production || '').toUpperCase();
 
         if (faltaReceber > 0 && p.client_due_date && p.client_due_date.startsWith(mesAno)) {
           if (st === 'INADIMPLENTE') {
-            lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `⚠️ Inadimplente (Não Soma no Caixa): ${p.client}`, entrada: 0, saida: 0 });
+            lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `⚠️ Inadimplente (${p.entity}): ${p.client}`, entrada: 0, saida: 0 });
           } else {
-            lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `Recebimento (${st}): ${p.client}`, entrada: faltaReceber, saida: 0 });
+            lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `Recebimento (${p.entity} - ${st}): ${p.client}`, entrada: faltaReceber, saida: 0 });
             saldo += faltaReceber;
           }
         }
 
         const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
         if (faltaPagarForn > 0 && p.supplier_due_date && p.supplier_due_date.startsWith(mesAno)) {
-          lancamentos.push({ data: p.supplier_due_date, origem: 'Fornecedor', descricao: `Pagamento: ${p.supplier || 'Terceiro'} (Ref. ${p.client})`, entrada: 0, saida: faltaPagarForn });
+          lancamentos.push({ data: p.supplier_due_date, origem: 'Fornecedor', descricao: `Pagamento (${p.entity}): ${p.supplier || 'Terceiro'} (Ref. ${p.client})`, entrada: 0, saida: faltaPagarForn });
           saldo -= faltaPagarForn;
         }
       });
 
-      // 2. CONTAS E FATURAS DE CARTÃO AGRUPADAS
+      // 2. CONTAS E FATURAS DE CARTÃO (FILTRADAS POR PERFIL)
       let faturasCartao = {};
 
       bills.forEach(b => {
+        if (perfilSel !== 'ALL' && b.entity !== perfilSel) return;
+
         if (!b.is_paid && b.due_date && b.due_date.startsWith(mesAno)) {
           if(b.card_id) {
             if(!faturasCartao[b.card_id]) faturasCartao[b.card_id] = 0;
@@ -617,8 +645,11 @@
 
       Object.keys(faturasCartao).forEach(cardId => {
         const c = cards.find(x => x.id == cardId);
+        // Se o perfil do cartão não for o perfil filtrado, descarta
+        if (perfilSel !== 'ALL' && c && c.entity !== perfilSel) return;
+
         const dataVencimento = c ? `${mesAno}-${String(c.due_day).padStart(2, '0')}` : `${mesAno}-10`;
-        const nomeFatura = c ? c.name : 'Cartão Desconhecido';
+        const nomeFatura = c ? `${c.name} (${c.entity})` : 'Cartão Desconhecido';
         
         lancamentos.push({ data: dataVencimento, origem: 'Cartão de Crédito', descricao: `Fatura Consolidada: ${nomeFatura}`, entrada: 0, saida: faturasCartao[cardId] });
         saldo -= faturasCartao[cardId];
@@ -627,7 +658,7 @@
       lancamentos.sort((a,b) => a.data.localeCompare(b.data));
 
       if (lancamentos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum lançamento para este mês.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>`;
       } else {
         lancamentos.forEach(l => {
           const isFatura = l.origem === 'Cartão de Crédito';
@@ -695,7 +726,6 @@
       }
     }
 
-    // NOVA LÓGICA DE CÁLCULO: PARCELA x QTD PARCELAS = TOTAL
     function toggleRecurrent() {
       const isRecurrent = document.getElementById('bill_is_recurrent').checked;
       const boxInst = document.getElementById('box_installments');
