@@ -67,7 +67,7 @@ class OrderModel(Base):
     production_type = Column(String, nullable=False)
     supplier = Column(String, nullable=True)
     supplier_cost = Column(Float, default=0.0)
-    status_production = Column(String, default="Aguardando Arte")
+    status_production = Column(String, default="Em Produção")
     supplier_due_date = Column(String, nullable=True)
     client_due_date = Column(String, nullable=True)
     sale_value = Column(Float, default=0.0)
@@ -134,6 +134,9 @@ class OrderSchema(BaseModel):
     sale_value: float
     paid_by_client: float
     paid_to_supplier: float
+
+class OrderStatusUpdate(BaseModel):
+    status_production: str
 
 @app.get("/api/profiles")
 def get_profiles(db: Session = Depends(get_db)):
@@ -211,6 +214,15 @@ def create_order(order: OrderSchema, db: Session = Depends(get_db)):
     db_order = OrderModel(**order.dict())
     db.add(db_order); db.commit(); db.refresh(db_order)
     return db_order
+
+@app.put("/api/orders/{order_id}/status")
+def update_order_status(order_id: int, status_data: OrderStatusUpdate, db: Session = Depends(get_db)):
+    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+    if order:
+        order.status_production = status_data.status_production
+        db.commit()
+        return {"message": "Status do pedido atualizado com sucesso"}
+    raise HTTPException(status_code=404, detail="Pedido não encontrado")
 
 @app.delete("/api/orders/{order_id}")
 def delete_order(order_id: int, db: Session = Depends(get_db)):
