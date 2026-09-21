@@ -74,7 +74,6 @@
     <!-- ABA 2: FINANCEIRO GERAL -->
     <section id="sec-financeiro" class="hidden space-y-6">
       
-      <!-- RESUMO DOS CARTÕES -->
       <div id="box-cartoes" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Renderizado via JS -->
       </div>
@@ -86,7 +85,6 @@
         </div>
 
         <div class="flex items-center gap-3 w-full md:w-auto">
-          <!-- NAV MÊS FINANCEIRO -->
           <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
             <button onclick="navegarMes('filtro-mes-fin', -1); renderizarBills();" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-chevron-left"></i></button>
             <input type="month" id="filtro-mes-fin" onchange="renderizarBills()" class="bg-transparent font-bold text-xs p-1 text-slate-700 focus:outline-none">
@@ -201,6 +199,7 @@
             <option value="EM PRODUÇÃO" selected>EM PRODUÇÃO</option>
             <option value="AGUARDANDO RETIRADA OU ENTREGA">AGUARDANDO RETIRADA OU ENTREGA</option>
             <option value="AGUARDANDO PAGAMENTO FINAL">AGUARDANDO PAGAMENTO FINAL</option>
+            <option value="INADIMPLENTE">INADIMPLENTE (Tirar do Caixa)</option>
             <option value="FINALIZADO">FINALIZADO</option>
           </select>
         </div>
@@ -276,7 +275,6 @@
           </div>
         </div>
 
-        <!-- RECORRÊNCIA -->
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center space-x-3 mt-2">
           <input type="checkbox" id="bill_is_recurrent" onchange="toggleRecurrent()" class="w-4 h-4 text-emerald-600 rounded border-gray-300">
           <div>
@@ -429,6 +427,7 @@
 
     function getStatusClass(status) {
       const st = (status || '').toUpperCase();
+      if (st === 'INADIMPLENTE') return 'bg-purple-900 text-white border-purple-900 font-bold';
       if (st.includes('AGUARDANDO PAGAMENTO')) return 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
       if (st === 'EM PRODUÇÃO') return 'bg-amber-100 text-amber-800 border-amber-300 font-bold';
       if (st === 'AGUARDANDO RETIRADA OU ENTREGA') return 'bg-blue-100 text-blue-800 border-blue-300 font-bold';
@@ -460,6 +459,7 @@
             <option value="EM PRODUÇÃO" ${stAtual === 'EM PRODUÇÃO' ? 'selected' : ''}>EM PRODUÇÃO</option>
             <option value="AGUARDANDO RETIRADA OU ENTREGA" ${stAtual === 'AGUARDANDO RETIRADA OU ENTREGA' ? 'selected' : ''}>AGUARDANDO RETIRADA/ENTREGA</option>
             <option value="AGUARDANDO PAGAMENTO FINAL" ${stAtual === 'AGUARDANDO PAGAMENTO FINAL' ? 'selected' : ''}>AGUARDANDO PAGTO FINAL</option>
+            <option value="INADIMPLENTE" ${stAtual === 'INADIMPLENTE' ? 'selected' : ''}>🚫 INADIMPLENTE (Tirar do Caixa)</option>
             <option value="FINALIZADO" ${stAtual === 'FINALIZADO' ? 'selected' : ''}>FINALIZADO</option>
           </select>
         `;
@@ -576,17 +576,19 @@
       let lancamentos = [];
       let saldo = saldoInicial;
 
-      // 1. PEDIDOS
+      // 1. PEDIDOS DE CLIENTES
       pedidos.forEach(p => {
         const faltaReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
         const st = (p.status_production || '').toUpperCase();
 
         if (faltaReceber > 0 && p.client_due_date && p.client_due_date.startsWith(mesAno)) {
-          if (!st.includes('AGUARDANDO PAGAMENTO')) {
-            lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `Recebimento: ${p.client}`, entrada: faltaReceber, saida: 0 });
-            saldo += faltaReceber;
+          if (st === 'INADIMPLENTE') {
+            // Se você marcou como INADIMPLENTE, exibe no extrato em alerta mas NÃO SOMA no caixa (entrada 0)
+            lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `⚠️ Inadimplente (Não Soma no Caixa): ${p.client}`, entrada: 0, saida: 0 });
           } else {
-            lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `⚠️ Pendente (${st}): ${p.client}`, entrada: 0, saida: 0 });
+            // Todos os outros status contam como receita prevista normalmente
+            lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `Recebimento (${st}): ${p.client}`, entrada: faltaReceber, saida: 0 });
+            saldo += faltaReceber;
           }
         }
 
@@ -628,12 +630,14 @@
       } else {
         lancamentos.forEach(l => {
           const isFatura = l.origem === 'Cartão de Crédito';
+          const isInadimplente = l.descricao.includes('Inadimplente');
           const tr = document.createElement('tr');
-          tr.className = isFatura ? 'bg-purple-50/50' : '';
+          tr.className = isFatura ? 'bg-purple-50/50' : (isInadimplente ? 'bg-rose-50/70' : '');
+          
           tr.innerHTML = `
             <td class="p-2.5 font-bold text-slate-700">${l.data}</td>
             <td class="p-2.5 text-xs font-semibold ${isFatura ? 'text-purple-600' : 'text-slate-500'}">${isFatura ? '<i class="fa-solid fa-credit-card"></i> ' : ''}${l.origem}</td>
-            <td class="p-2.5 font-medium ${l.descricao.includes('⚠️') ? 'text-rose-600 font-bold' : ''}">${l.descricao}</td>
+            <td class="p-2.5 font-medium ${isInadimplente ? 'text-rose-700 font-bold' : ''}">${l.descricao}</td>
             <td class="p-2.5 text-right font-bold text-emerald-600">${l.entrada > 0 ? 'R$ ' + l.entrada.toFixed(2) : '-'}</td>
             <td class="p-2.5 text-right font-bold text-rose-600">${l.saida > 0 ? 'R$ ' + l.saida.toFixed(2) : '-'}</td>
           `;
