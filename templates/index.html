@@ -283,26 +283,29 @@
           </div>
         </div>
 
+        <!-- LÓGICA INVERTIDA: VALOR DA PARCELA É O INPUT E TOTAL É CALCULADO -->
         <div class="grid grid-cols-2 gap-3 mt-2">
           <div>
-            <label id="lbl_bill_total" class="block text-xs font-semibold text-slate-600 mb-1">Valor Total (R$) *</label>
-            <input type="number" step="0.01" id="bill_total_amount" required oninput="calcParcela()" class="w-full p-2 border rounded">
+            <label id="lbl_bill_installment" class="block text-xs font-semibold text-slate-600 mb-1">Valor da Parcela (R$) *</label>
+            <input type="number" step="0.01" id="bill_installment_amount" required oninput="calcTotal()" class="w-full p-2 border rounded bg-white font-bold">
           </div>
           <div id="box_installments">
             <label class="block text-xs font-semibold text-slate-600 mb-1">Nº de Parcelas *</label>
-            <input type="number" min="1" id="bill_total_installments" value="1" required oninput="calcParcela()" class="w-full p-2 border rounded">
+            <input type="number" min="1" id="bill_total_installments" value="1" required oninput="calcTotal()" class="w-full p-2 border rounded">
           </div>
         </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label id="lbl_bill_installment" class="block text-xs font-semibold text-slate-600 mb-1">Valor Parcela (R$)</label>
-            <input type="number" step="0.01" id="bill_installment_amount" readonly class="w-full p-2 border rounded bg-slate-100 font-bold">
+            <label id="lbl_bill_total" class="block text-xs font-semibold text-slate-600 mb-1">Valor Total da Compra (R$)</label>
+            <input type="number" step="0.01" id="bill_total_amount" readonly class="w-full p-2 border rounded bg-slate-100 font-medium">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">1º Vencimento *</label>
             <input type="date" id="bill_due_date" required class="w-full p-2 border rounded">
           </div>
         </div>
+
         <div class="flex justify-end gap-2 pt-3 border-t">
           <button type="button" onclick="fecharModalBill()" class="px-4 py-2 border rounded text-xs">Cancelar</button>
           <button type="submit" id="btn-save-bill" class="px-4 py-2 bg-rose-600 text-white rounded text-xs font-semibold">Salvar Conta</button>
@@ -583,10 +586,8 @@
 
         if (faltaReceber > 0 && p.client_due_date && p.client_due_date.startsWith(mesAno)) {
           if (st === 'INADIMPLENTE') {
-            // Se você marcou como INADIMPLENTE, exibe no extrato em alerta mas NÃO SOMA no caixa (entrada 0)
             lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `⚠️ Inadimplente (Não Soma no Caixa): ${p.client}`, entrada: 0, saida: 0 });
           } else {
-            // Todos os outros status contam como receita prevista normalmente
             lancamentos.push({ data: p.client_due_date, origem: 'Pedido Cliente', descricao: `Recebimento (${st}): ${p.client}`, entrada: faltaReceber, saida: 0 });
             saldo += faltaReceber;
           }
@@ -694,31 +695,33 @@
       }
     }
 
+    // NOVA LÓGICA DE CÁLCULO: PARCELA x QTD PARCELAS = TOTAL
     function toggleRecurrent() {
       const isRecurrent = document.getElementById('bill_is_recurrent').checked;
       const boxInst = document.getElementById('box_installments');
-      const lblTotal = document.getElementById('lbl_bill_total');
       const lblInst = document.getElementById('lbl_bill_installment');
+      const lblTotal = document.getElementById('lbl_bill_total');
 
       if(isRecurrent) {
         boxInst.classList.add('hidden');
         document.getElementById('bill_total_installments').value = 12;
-        lblTotal.innerText = "Valor Mensal (R$) *";
-        lblInst.innerText = "Proj. Recorrente";
+        lblInst.innerText = "Valor Mensal (R$) *";
+        lblTotal.innerText = "Proj. Recorrente Total";
       } else {
         boxInst.classList.remove('hidden');
         document.getElementById('bill_total_installments').value = 1;
-        lblTotal.innerText = "Valor Total da Compra (R$) *";
-        lblInst.innerText = "Valor da Parcela (R$)";
+        lblInst.innerText = "Valor da Parcela (R$) *";
+        lblTotal.innerText = "Valor Total da Compra (R$)";
       }
-      calcParcela();
+      calcTotal();
     }
 
-    function calcParcela() {
-      const total = parseFloat(document.getElementById('bill_total_amount').value) || 0;
+    function calcTotal() {
+      const valParcela = parseFloat(document.getElementById('bill_installment_amount').value) || 0;
       const isRecurrent = document.getElementById('bill_is_recurrent').checked;
-      const n = isRecurrent ? 1 : (parseInt(document.getElementById('bill_total_installments').value) || 1);
-      document.getElementById('bill_installment_amount').value = isRecurrent ? total.toFixed(2) : (total / n).toFixed(2);
+      const n = isRecurrent ? 12 : (parseInt(document.getElementById('bill_total_installments').value) || 1);
+      
+      document.getElementById('bill_total_amount').value = (valParcela * n).toFixed(2);
     }
 
     function abrirModalBill() {
@@ -733,6 +736,8 @@
       cards.forEach(c => selectCard.innerHTML += `<option value="${c.id}">${c.name} (${c.entity})</option>`);
 
       document.getElementById('bill_is_recurrent').checked = false;
+      document.getElementById('bill_installment_amount').value = '';
+      document.getElementById('bill_total_amount').value = '';
       toggleRecurrent();
 
       document.getElementById('modal-bill').classList.remove('hidden');
@@ -749,10 +754,10 @@
       const cardId = document.getElementById('bill_card_id').value;
       const isRecurrent = document.getElementById('bill_is_recurrent').checked;
       
-      const totalAmountInput = parseFloat(document.getElementById('bill_total_amount').value);
+      const installmentAmount = parseFloat(document.getElementById('bill_installment_amount').value) || 0;
       const totalInstallments = isRecurrent ? 12 : parseInt(document.getElementById('bill_total_installments').value);
-      
-      const installmentAmount = isRecurrent ? totalAmountInput : (totalAmountInput / totalInstallments);
+      const totalAmountInput = installmentAmount * totalInstallments;
+
       const dueDateStr = document.getElementById('bill_due_date').value;
       const [ano, mes, dia] = dueDateStr.split('-').map(Number);
 
