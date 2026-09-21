@@ -212,6 +212,14 @@ def create_order(order: OrderSchema, db: Session = Depends(get_db)):
     db.add(db_order); db.commit(); db.refresh(db_order)
     return db_order
 
+@app.delete("/api/orders/{order_id}")
+def delete_order(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+    if order:
+        db.delete(order); db.commit()
+        return {"message": "Pedido excluído"}
+    raise HTTPException(status_code=404, detail="Pedido não encontrado")
+
 @app.get("/")
 def read_root():
     path_templates = get_resource_path(os.path.join("templates", "index.html"))
