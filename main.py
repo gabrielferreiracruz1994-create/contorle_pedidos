@@ -2,7 +2,6 @@ import os
 import sys
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Depends
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey
@@ -67,12 +66,17 @@ class OrderModel(Base):
     production_type = Column(String, nullable=False)
     supplier = Column(String, nullable=True)
     supplier_cost = Column(Float, default=0.0)
-    status_production = Column(String, default="Em Produção")
+    status_production = Column(String, default="EM PRODUÇÃO")
     supplier_due_date = Column(String, nullable=True)
     client_due_date = Column(String, nullable=True)
     sale_value = Column(Float, default=0.0)
     paid_by_client = Column(Float, default=0.0)
     paid_to_supplier = Column(Float, default=0.0)
+
+class SettingsModel(Base):
+    __tablename__ = "settings"
+    key = Column(String, primary_key=True, index=True)
+    value = Column(String, nullable=False)
 
 Base.metadata.create_all(bind=engine)
 
@@ -84,6 +88,11 @@ if db_init.query(ProfileModel).count() == 0:
         ProfileModel(name="Empresas")
     ])
     db_init.commit()
+
+if not db_init.query(SettingsModel).filter(SettingsModel.key == "initial_balance").first():
+    db_init.add(SettingsModel(key="initial_balance", value="0.00"))
+    db_init.commit()
+
 db_init.close()
 
 app = FastAPI()
@@ -137,6 +146,9 @@ class OrderSchema(BaseModel):
 
 class OrderStatusUpdate(BaseModel):
     status_production: str
+
+class BalanceUpdate(BaseModel):
+    initial_balance: float
 
 @app.get("/api/profiles")
 def get_profiles(db: Session = Depends(get_db)):
@@ -231,6 +243,23 @@ def delete_order(order_id: int, db: Session = Depends(get_db)):
         db.delete(order); db.commit()
         return {"message": "Pedido excluído"}
     raise HTTPException(status_code=404, detail="Pedido não encontrado")
+
+@app.get("/api/settings/balance")
+def get_balance(db: Session = Depends(get_db)):
+    setting = db.query(SettingsModel).filter(SettingsModel.key == "initial_balance").first()
+    val = float(setting.value) if setting else 0.0
+    return {"initial_balance": val}
+
+@app.post("/api/settings/balance")
+def update_balance(data: BalanceUpdate, db: Session = Depends(get_db)):
+    setting = db.query(SettingsModel).filter(SettingsModel.key == "initial_balance").first()
+    if not setting:
+        setting = SettingsModel(key="initial_balance", value=str(data.initial_balance))
+        db.add(setting)
+    else:
+        setting.value = str(data.initial_balance)
+    db.commit()
+    return {"initial_balance": data.initial_balance}
 
 @app.get("/")
 def read_root():
