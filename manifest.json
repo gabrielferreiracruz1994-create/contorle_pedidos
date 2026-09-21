@@ -1,0 +1,16 @@
+{
+  "short_name": "ERP Unificado",
+  "name": "ERP Unificado - Gestão e Fluxo de Caixa",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "display": "standalone",
+  "scope": "/"
+}
