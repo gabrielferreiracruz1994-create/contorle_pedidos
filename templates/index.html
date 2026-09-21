@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema ERP - Pedidos & Financeiro Integrado</title>
+  <title>ERP Unificado - Pedidos, Financeiro & Caixa</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -12,9 +12,8 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
-  <!-- HEADER -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
       <div class="flex items-center gap-3">
         <div class="bg-blue-600 text-white p-2 rounded-lg"><i class="fa-solid fa-chart-pie text-xl"></i></div>
         <div>
@@ -22,24 +21,32 @@
           <span class="text-xs text-slate-500">Pedidos, Cartões e Caixa</span>
         </div>
       </div>
-      <button onclick="abrirModalPedido()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-        <i class="fa-solid fa-plus"></i> Novo Pedido
-      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="abrirModalPerfil()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold">
+          <i class="fa-solid fa-users"></i> Perfis/Usuários
+        </button>
+        <button onclick="abrirModalCartao()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-2 rounded-lg text-xs font-semibold">
+          <i class="fa-solid fa-credit-card"></i> Cartões
+        </button>
+        <button onclick="abrirModalPedido()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <i class="fa-solid fa-plus"></i> Novo Pedido
+        </button>
+      </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-6">
 
-    <!-- ABAS PRINCIPAIS -->
-    <div class="flex border-b border-slate-200 mb-6 bg-white rounded-t-xl px-4">
-      <button onclick="mudarAba('pedidos')" id="tab-pedidos" class="py-3 px-6 text-sm font-medium text-slate-600 tab-active flex items-center gap-2">
-        <i class="fa-solid fa-list-check"></i> Controle de Pedidos
+    <!-- ABAS REORDENADAS -->
+    <div class="flex border-b border-slate-200 mb-6 bg-white rounded-t-xl px-4 overflow-x-auto">
+      <button onclick="mudarAba('pedidos')" id="tab-pedidos" class="py-3 px-6 text-sm font-medium text-slate-600 tab-active flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-list-check"></i> 1. Controle de Pedidos
       </button>
-      <button onclick="mudarAba('fluxo')" id="tab-fluxo" class="py-3 px-6 text-sm font-medium text-slate-600 flex items-center gap-2">
-        <i class="fa-solid fa-chart-line"></i> Fluxo de Caixa / Projetado
+      <button onclick="mudarAba('financeiro')" id="tab-financeiro" class="py-3 px-6 text-sm font-medium text-slate-600 flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-wallet"></i> 2. Financeiro Geral (Contas & Cartões)
       </button>
-      <button onclick="mudarAba('financeiro')" id="tab-financeiro" class="py-3 px-6 text-sm font-medium text-slate-600 flex items-center gap-2">
-        <i class="fa-solid fa-wallet"></i> Financeiro Geral (Contas & Cartões)
+      <button onclick="mudarAba('fluxo')" id="tab-fluxo" class="py-3 px-6 text-sm font-medium text-slate-600 flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-chart-line"></i> 3. Fluxo de Caixa / Projetado
       </button>
     </div>
 
@@ -47,9 +54,9 @@
     <section id="sec-pedidos">
       <div class="bg-white p-4 rounded-xl border border-slate-200 mb-4 flex justify-between items-center">
         <input type="text" id="busca-pedido" onkeyup="renderizarPedidos()" placeholder="Buscar cliente ou produto..." class="w-80 p-2 border border-slate-200 rounded-lg text-sm">
-        <div class="text-xs font-semibold text-slate-500">Exibindo pedidos cadastrados</div>
+        <div class="text-xs font-semibold text-slate-500">Gestão Operacional de Vendas</div>
       </div>
-      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 border-b text-xs uppercase text-slate-500">
             <tr>
@@ -65,7 +72,37 @@
       </div>
     </section>
 
-    <!-- ABA 2: FLUXO DE CAIXA PROJETADO -->
+    <!-- ABA 2: FINANCEIRO GERAL -->
+    <section id="sec-financeiro" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
+        <div>
+          <h2 class="text-base font-bold text-slate-800">Contas a Pagar & Cartões de Crédito</h2>
+          <p class="text-xs text-slate-500">Lançamentos pessoais e empresariais refletem automaticamente no fluxo de caixa</p>
+        </div>
+        <button onclick="abrirModalBill()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+          <i class="fa-solid fa-plus"></i> + Nova Conta / Fatura
+        </button>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b">
+            <tr>
+              <th class="p-3">Credor</th>
+              <th class="p-3">Perfil / Cartão</th>
+              <th class="p-3">Parcela</th>
+              <th class="p-3">Vencimento</th>
+              <th class="p-3 text-right">Valor Parcela</th>
+              <th class="p-3 text-center">Status</th>
+              <th class="p-3 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-bills" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ABA 3: FLUXO DE CAIXA -->
     <section id="sec-fluxo" class="hidden space-y-6">
       <div class="bg-slate-900 text-white rounded-xl p-5 flex justify-between items-center">
         <div class="flex items-center gap-3">
@@ -73,14 +110,14 @@
           <input type="month" id="filtro-mes-fluxo" onchange="renderizarFluxo()" class="bg-slate-800 text-white p-2 rounded border border-slate-700 text-sm font-bold">
         </div>
         <div class="text-right">
-          <div class="text-xs text-slate-400 uppercase font-bold">Saldo Estimado do Caixa</div>
+          <div class="text-xs text-slate-400 uppercase font-bold">Resultado Final Previsto do Caixa</div>
           <div id="saldo-projetado-fluxo" class="text-2xl font-black text-emerald-400">R$ 0,00</div>
         </div>
       </div>
 
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
         <h2 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-list-ol text-blue-600"></i> Cronograma Consolidado (Pedidos + Contas + Faturas)
+          <i class="fa-solid fa-list-ol text-blue-600"></i> Cronograma Consolidado (Resultado Operacional + Financeiro)
         </h2>
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b">
@@ -97,69 +134,217 @@
       </div>
     </section>
 
-    <!-- ABA 3: FINANCEIRO GERAL (MÓDULO DE CONTAS E CARTÕES) -->
-    <section id="sec-financeiro" class="hidden space-y-6">
-      <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
-        <div>
-          <h2 class="text-base font-bold text-slate-800">Contas a Pagar & Cartões de Crédito</h2>
-          <p class="text-xs text-slate-500">Lançamentos pessoais e empresariais refletem automaticamente no fluxo de caixa</p>
-        </div>
-        <button onclick="abrirModalBill()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-          <i class="fa-solid fa-plus"></i> Nova Conta / Fatura
-        </button>
-      </div>
-
-      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b">
-            <tr>
-              <th class="p-3">Credor</th>
-              <th class="p-3">Entidade / Perfil</th>
-              <th class="p-3">Parcela</th>
-              <th class="p-3">Vencimento</th>
-              <th class="p-3 text-right">Valor Parcela</th>
-              <th class="p-3 text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody id="tabela-bills" class="divide-y divide-slate-100"></tbody>
-        </table>
-      </div>
-    </section>
-
   </main>
+
+  <!-- MODAL ADICIONAR NOVO PEDIDO -->
+  <div id="modal-pedido" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-base">Novo Pedido</h3>
+        <button onclick="fecharModalPedido()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="salvarPedido(event)" class="p-6 space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
+          <input type="text" id="ped_client" required placeholder="Nome do Cliente" class="w-full p-2 border rounded">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Produto *</label>
+          <input type="text" id="ped_product" required placeholder="Descrição do Produto" class="w-full p-2 border rounded">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Empresa/Perfil *</label>
+            <select id="ped_entity" required class="w-full p-2 border rounded bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Produção *</label>
+            <select id="ped_production_type" required class="w-full p-2 border rounded bg-white">
+              <option value="PROPRIA">Própria</option>
+              <option value="TERCEIRO">Terceirizada</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Valor Venda (R$)</label>
+            <input type="number" step="0.01" id="ped_sale_value" value="0.00" class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Custo Fornec. (R$)</label>
+            <input type="number" step="0.01" id="ped_supplier_cost" value="0.00" class="w-full p-2 border rounded">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Venc. Recebimento</label>
+            <input type="date" id="ped_client_due_date" class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Venc. Fornecedor</label>
+            <input type="date" id="ped_supplier_due_date" class="w-full p-2 border rounded">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" onclick="fecharModalPedido()" class="px-4 py-2 border rounded text-xs">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-semibold">Salvar Pedido</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ADICIONAR CONTA / DÍVIDA -->
+  <div id="modal-bill" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-base">Nova Conta / Lançamento</h3>
+        <button onclick="fecharModalBill()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="salvarBill(event)" class="p-6 space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Credor / Descrição *</label>
+          <input type="text" id="bill_creditor" required placeholder="Ex: Mercado, Empréstimo, Luz" class="w-full p-2 border rounded">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Perfil / Usuário *</label>
+            <select id="bill_entity" required class="w-full p-2 border rounded bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Cartão (Opcional)</label>
+            <select id="bill_card_id" class="w-full p-2 border rounded bg-white">
+              <option value="">Sem Cartão (Direto)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Valor Total (R$) *</label>
+            <input type="number" step="0.01" id="bill_total_amount" required oninput="calcParcela()" class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nº de Parcelas *</label>
+            <input type="number" min="1" id="bill_total_installments" value="1" required oninput="calcParcela()" class="w-full p-2 border rounded">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Valor Parcela (R$)</label>
+            <input type="number" step="0.01" id="bill_installment_amount" readonly class="w-full p-2 border rounded bg-slate-100 font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">1º Vencimento *</label>
+            <input type="date" id="bill_due_date" required class="w-full p-2 border rounded">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" onclick="fecharModalBill()" class="px-4 py-2 border rounded text-xs">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded text-xs font-semibold">Salvar Conta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PERFIS / USUÁRIOS -->
+  <div id="modal-perfil" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-base">Gerenciar Perfis / Usuários</h3>
+        <button onclick="fecharModalPerfil()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <form onsubmit="salvarPerfil(event)" class="flex gap-2">
+          <input type="text" id="novo_perfil_nome" required placeholder="Nome do Perfil" class="flex-1 p-2 border rounded text-sm">
+          <button type="submit" class="bg-blue-600 text-white px-3 py-2 rounded text-xs font-semibold">Cadastrar</button>
+        </form>
+        <ul id="lista-perfis" class="divide-y text-sm max-h-48 overflow-y-auto"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CARTÕES -->
+  <div id="modal-cartao" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-base">Cadastrar Cartão de Crédito</h3>
+        <button onclick="fecharModalCartao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="salvarCartao(event)" class="p-6 space-y-3 text-sm">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Cartão *</label>
+          <input type="text" id="card_name" required placeholder="Ex: Nubank, Itaú Black" class="w-full p-2 border rounded">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Perfil Responsável *</label>
+          <select id="card_entity" required class="w-full p-2 border rounded bg-white"></select>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Limite (R$)</label>
+            <input type="number" step="0.01" id="card_limit" required class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Dia Fech.</label>
+            <input type="number" min="1" max="31" id="card_closing" required class="w-full p-2 border rounded">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Dia Venc.</label>
+            <input type="number" min="1" max="31" id="card_due" required class="w-full p-2 border rounded">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 border rounded text-xs">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded text-xs font-semibold">Salvar Cartão</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script>
     let pedidos = [];
     let bills = [];
+    let profiles = [];
+    let cards = [];
 
     const hoje = new Date();
     document.getElementById('filtro-mes-fluxo').value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
 
     async function carregarDados() {
       try {
-        const [resPedidos, resBills] = await Promise.all([
+        const [resPedidos, resBills, resProfiles, resCards] = await Promise.all([
           fetch('/api/orders').then(r => r.ok ? r.json() : []),
-          fetch('/api/bills').then(r => r.ok ? r.json() : [])
+          fetch('/api/bills').then(r => r.ok ? r.json() : []),
+          fetch('/api/profiles').then(r => r.ok ? r.json() : []),
+          fetch('/api/cards').then(r => r.ok ? r.json() : [])
         ]);
-        pedidos = resPedidos;
-        bills = resBills;
+
+        pedidos = Array.isArray(resPedidos) ? resPedidos : [];
+        bills = Array.isArray(resBills) ? resBills : [];
+        profiles = Array.isArray(resProfiles) ? resProfiles : [];
+        cards = Array.isArray(resCards) ? resCards : [];
+
         renderizarPedidos();
         renderizarBills();
         renderizarFluxo();
       } catch (e) {
-        console.error("Erro ao carregar dados do servidor:", e);
+        console.error("Erro ao inicializar dados:", e);
       }
     }
 
     function renderizarPedidos() {
       const tbody = document.getElementById('tabela-pedidos');
+      if (!tbody) return;
       tbody.innerHTML = '';
+      if (pedidos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido cadastrado.</td></tr>`;
+        return;
+      }
       pedidos.forEach(p => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="p-3 font-bold">${p.client} <span class="text-xs font-normal text-slate-500">(${p.product})</span></td>
           <td class="p-3"><span class="text-xs font-semibold px-2 py-0.5 rounded ${p.production_type === 'TERCEIRO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">${p.production_type}</span></td>
-          <td class="p-3"><span class="text-xs font-medium px-2 py-0.5 bg-slate-100 rounded">${p.status_production}</span></td>
+          <td class="p-3"><span class="text-xs font-medium px-2 py-0.5 bg-slate-100 rounded">${p.status_production || 'Aguardando Arte'}</span></td>
           <td class="p-3 text-right font-bold text-slate-800">R$ ${(p.sale_value || 0).toFixed(2)}</td>
           <td class="p-3 text-right text-rose-600 font-semibold">R$ ${(p.supplier_cost || 0).toFixed(2)}</td>
         `;
@@ -169,19 +354,30 @@
 
     function renderizarBills() {
       const tbody = document.getElementById('tabela-bills');
+      if (!tbody) return;
       tbody.innerHTML = '';
+      if (bills.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhuma conta cadastrada.</td></tr>`;
+        return;
+      }
       bills.forEach(b => {
+        const cardObj = cards.find(c => c.id === b.card_id);
+        const cardNome = cardObj ? ` [💳 ${cardObj.name}]` : '';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="p-3 font-bold text-slate-800">${b.creditor}</td>
-          <td class="p-3 text-xs font-semibold text-slate-500">${b.entity} (${b.created_by_user})</td>
+          <td class="p-3 text-xs font-semibold text-slate-600">${b.entity}${cardNome}</td>
           <td class="p-3 text-xs">${b.installment_number}/${b.total_installments}</td>
           <td class="p-3 text-xs font-medium">${b.due_date}</td>
-          <td class="p-3 text-right font-bold text-rose-600">R$ ${b.installment_amount.toFixed(2)}</td>
+          <td class="p-3 text-right font-bold text-rose-600">R$ ${(b.installment_amount || 0).toFixed(2)}</td>
           <td class="p-3 text-center">
-            <span class="text-xs px-2 py-1 rounded font-bold ${b.is_paid ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+            <button onclick="alternarStatusBill(${b.id}, ${!b.is_paid})" class="text-xs px-2 py-1 rounded font-bold ${b.is_paid ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
               ${b.is_paid ? 'Pago' : 'Pendente'}
-            </span>
+            </button>
+          </td>
+          <td class="p-3 text-center">
+            <button onclick="deletarBill(${b.id})" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -191,18 +387,18 @@
     function renderizarFluxo() {
       const mesAno = document.getElementById('filtro-mes-fluxo').value;
       const tbody = document.getElementById('tabela-cronograma-fluxo');
+      if (!tbody) return;
       tbody.innerHTML = '';
 
       let lancamentos = [];
       let saldo = 0;
 
-      // 1. Entradas dos Pedidos
       pedidos.forEach(p => {
-        const aReceber = p.sale_value - p.paid_by_client;
+        const aReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
         if (aReceber > 0 && p.client_due_date && p.client_due_date.startsWith(mesAno)) {
           lancamentos.push({
             data: p.client_due_date,
-            origem: 'Pedido',
+            origem: 'Pedido Cliente',
             descricao: `Recebimento: ${p.client}`,
             entrada: aReceber,
             saida: 0
@@ -210,13 +406,12 @@
           saldo += aReceber;
         }
 
-        // Custo de fornecedores de pedidos terceirizados
-        const aPagarForn = p.supplier_cost - p.paid_to_supplier;
+        const aPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
         if (aPagarForn > 0 && p.supplier_due_date && p.supplier_due_date.startsWith(mesAno)) {
           lancamentos.push({
             data: p.supplier_due_date,
             origem: 'Fornecedor',
-            descricao: `Pagamento: ${p.supplier}`,
+            descricao: `Pagamento: ${p.supplier || 'Terceiro'}`,
             entrada: 0,
             saida: aPagarForn
           });
@@ -224,7 +419,6 @@
         }
       });
 
-      // 2. Contas do Módulo Financeiro
       bills.forEach(b => {
         if (!b.is_paid && b.due_date && b.due_date.startsWith(mesAno)) {
           lancamentos.push({
@@ -232,37 +426,219 @@
             origem: `Financeiro (${b.entity})`,
             descricao: `${b.creditor} (${b.installment_number}/${b.total_installments})`,
             entrada: 0,
-            saida: b.installment_amount
+            saida: b.installment_amount || 0
           });
-          saldo -= b.installment_amount;
+          saldo -= (b.installment_amount || 0);
         }
       });
 
       lancamentos.sort((a,b) => a.data.localeCompare(b.data));
 
-      lancamentos.forEach(l => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2.5 font-bold text-slate-700">${l.data}</td>
-          <td class="p-2.5 text-xs font-semibold text-slate-500">${l.origem}</td>
-          <td class="p-2.5 font-medium">${l.descricao}</td>
-          <td class="p-2.5 text-right font-bold text-emerald-600">${l.entrada > 0 ? 'R$ ' + l.entrada.toFixed(2) : '-'}</td>
-          <td class="p-2.5 text-right font-bold text-rose-600">${l.saida > 0 ? 'R$ ' + l.saida.toFixed(2) : '-'}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+      if (lancamentos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum lançamento previsto para este mês.</td></tr>`;
+      } else {
+        lancamentos.forEach(l => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="p-2.5 font-bold text-slate-700">${l.data}</td>
+            <td class="p-2.5 text-xs font-semibold text-slate-500">${l.origem}</td>
+            <td class="p-2.5 font-medium">${l.descricao}</td>
+            <td class="p-2.5 text-right font-bold text-emerald-600">${l.entrada > 0 ? 'R$ ' + l.entrada.toFixed(2) : '-'}</td>
+            <td class="p-2.5 text-right font-bold text-rose-600">${l.saida > 0 ? 'R$ ' + l.saida.toFixed(2) : '-'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
 
       document.getElementById('saldo-projetado-fluxo').innerText = `R$ ${saldo.toFixed(2)}`;
     }
 
+    // ABRIR E FECHAR MODAIS
+    function abrirModalPedido() {
+      const selectEntity = document.getElementById('ped_entity');
+      selectEntity.innerHTML = '';
+      if (profiles.length === 0) {
+        selectEntity.innerHTML = '<option value="Geral">Geral</option>';
+      } else {
+        profiles.forEach(p => selectEntity.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+      }
+      document.getElementById('modal-pedido').classList.remove('hidden');
+    }
+    function fecharModalPedido() { document.getElementById('modal-pedido').classList.add('hidden'); }
+
+    async function salvarPedido(e) {
+      e.preventDefault();
+      const body = {
+        entity: document.getElementById('ped_entity').value,
+        client: document.getElementById('ped_client').value,
+        product: document.getElementById('ped_product').value,
+        production_type: document.getElementById('ped_production_type').value,
+        supplier: "Fornecedor",
+        supplier_cost: parseFloat(document.getElementById('ped_supplier_cost').value) || 0,
+        status_production: "Aguardando Arte",
+        client_due_date: document.getElementById('ped_client_due_date').value || null,
+        supplier_due_date: document.getElementById('ped_supplier_due_date').value || null,
+        sale_value: parseFloat(document.getElementById('ped_sale_value').value) || 0,
+        paid_by_client: 0,
+        paid_to_supplier: 0
+      };
+
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+
+      fecharModalPedido();
+      carregarDados();
+    }
+
+    function abrirModalBill() {
+      const selectEntity = document.getElementById('bill_entity');
+      const selectCard = document.getElementById('bill_card_id');
+
+      selectEntity.innerHTML = '';
+      if (profiles.length === 0) {
+        selectEntity.innerHTML = '<option value="Gabriel">Gabriel</option><option value="Jéssica">Jéssica</option><option value="Empresas">Empresas</option>';
+      } else {
+        profiles.forEach(p => selectEntity.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+      }
+
+      selectCard.innerHTML = '<option value="">Sem Cartão (Direto)</option>';
+      cards.forEach(c => selectCard.innerHTML += `<option value="${c.id}">${c.name} (${c.entity})</option>`);
+
+      document.getElementById('modal-bill').classList.remove('hidden');
+    }
+    function fecharModalBill() { document.getElementById('modal-bill').classList.add('hidden'); }
+
+    function calcParcela() {
+      const total = parseFloat(document.getElementById('bill_total_amount').value) || 0;
+      const n = parseInt(document.getElementById('bill_total_installments').value) || 1;
+      document.getElementById('bill_installment_amount').value = (total / n).toFixed(2);
+    }
+
+    async function salvarBill(e) {
+      e.preventDefault();
+      const creditor = document.getElementById('bill_creditor').value;
+      const entity = document.getElementById('bill_entity').value;
+      const cardId = document.getElementById('bill_card_id').value;
+      const totalAmount = parseFloat(document.getElementById('bill_total_amount').value);
+      const totalInstallments = parseInt(document.getElementById('bill_total_installments').value);
+      const installmentAmount = totalAmount / totalInstallments;
+      const dueDateStr = document.getElementById('bill_due_date').value;
+
+      const [ano, mes, dia] = dueDateStr.split('-').map(Number);
+
+      for(let i = 1; i <= totalInstallments; i++) {
+        const d = new Date(ano, mes - 1 + (i - 1), dia);
+        const dataFormatada = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+        await fetch('/api/bills', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            creditor,
+            entity,
+            total_amount: totalAmount,
+            installment_number: i,
+            total_installments: totalInstallments,
+            installment_amount: installmentAmount,
+            due_date: dataFormatada,
+            is_recurrent: false,
+            created_by_user: entity,
+            card_id: cardId ? parseInt(cardId) : null
+          })
+        });
+      }
+
+      fecharModalBill();
+      carregarDados();
+    }
+
+    async function alternarStatusBill(id, status) {
+      await fetch(`/api/bills/${id}/status`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ is_paid: status })
+      });
+      carregarDados();
+    }
+
+    async function deletarBill(id) {
+      if(confirm('Excluir esta conta?')) {
+        await fetch(`/api/bills/${id}`, { method: 'DELETE' });
+        carregarDados();
+      }
+    }
+
+    function abrirModalPerfil() {
+      const lista = document.getElementById('lista-perfis');
+      lista.innerHTML = '';
+      profiles.forEach(p => {
+        lista.innerHTML += `<li class="py-2 flex justify-between items-center border-b"><span>${p.name}</span><button onclick="deletarPerfil(${p.id})" class="text-xs text-rose-600"><i class="fa-solid fa-trash"></i></button></li>`;
+      });
+      document.getElementById('modal-perfil').classList.remove('hidden');
+    }
+    function fecharModalPerfil() { document.getElementById('modal-perfil').classList.add('hidden'); }
+
+    async function salvarPerfil(e) {
+      e.preventDefault();
+      const name = document.getElementById('novo_perfil_nome').value;
+      await fetch('/api/profiles', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name })
+      });
+      document.getElementById('novo_perfil_nome').value = '';
+      fecharModalPerfil();
+      carregarDados();
+    }
+
+    async function deletarPerfil(id) {
+      if(confirm('Excluir este perfil?')) {
+        await fetch(`/api/profiles/${id}`, { method: 'DELETE' });
+        fecharModalPerfil();
+        carregarDados();
+      }
+    }
+
+    function abrirModalCartao() {
+      const selectEntity = document.getElementById('card_entity');
+      selectEntity.innerHTML = '';
+      if (profiles.length === 0) {
+        selectEntity.innerHTML = '<option value="Gabriel">Gabriel</option><option value="Empresas">Empresas</option>';
+      } else {
+        profiles.forEach(p => selectEntity.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+      }
+      document.getElementById('modal-cartao').classList.remove('hidden');
+    }
+    function fecharModalCartao() { document.getElementById('modal-cartao').classList.add('hidden'); }
+
+    async function salvarCartao(e) {
+      e.preventDefault();
+      await fetch('/api/cards', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          name: document.getElementById('card_name').value,
+          entity: document.getElementById('card_entity').value,
+          total_limit: parseFloat(document.getElementById('card_limit').value),
+          closing_day: parseInt(document.getElementById('card_closing').value),
+          due_day: parseInt(document.getElementById('card_due').value)
+        })
+      });
+      fecharModalCartao();
+      carregarDados();
+    }
+
     function mudarAba(aba) {
       document.getElementById('sec-pedidos').classList.toggle('hidden', aba !== 'pedidos');
-      document.getElementById('sec-fluxo').classList.toggle('hidden', aba !== 'fluxo');
       document.getElementById('sec-financeiro').classList.toggle('hidden', aba !== 'financeiro');
+      document.getElementById('sec-fluxo').classList.toggle('hidden', aba !== 'fluxo');
 
       document.getElementById('tab-pedidos').classList.toggle('tab-active', aba === 'pedidos');
-      document.getElementById('tab-fluxo').classList.toggle('tab-active', aba === 'fluxo');
       document.getElementById('tab-financeiro').classList.toggle('tab-active', aba === 'financeiro');
+      document.getElementById('tab-fluxo').classList.toggle('tab-active', aba === 'fluxo');
     }
 
     carregarDados();
