@@ -60,7 +60,7 @@
           <thead class="bg-slate-50 border-b text-xs uppercase text-slate-500">
             <tr>
               <th class="p-3">Cliente / Produto</th>
-              <th class="p-3">Tipo / Status</th>
+              <th class="p-3">Tipo / Status Produção</th>
               <th class="p-3 text-right">Venda / Falta Rec.</th>
               <th class="p-3 text-right">Custo / Falta Pag. Forn.</th>
               <th class="p-3 text-center">Ações</th>
@@ -163,6 +163,15 @@
               <option value="TERCEIRO">Terceirizada</option>
             </select>
           </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Status Inicial *</label>
+          <select id="ped_status_production" required class="w-full p-2 border rounded bg-white">
+            <option value="AGUARDANDO PAGAMENTO">AGUARDANDO PAGAMENTO</option>
+            <option value="EM PRODUÇÃO" selected>EM PRODUÇÃO</option>
+            <option value="AGUARDANDO RETIRADA OU ENTREGA">AGUARDANDO RETIRADA OU ENTREGA</option>
+          </select>
         </div>
 
         <!-- VALORES DO CLIENTE -->
@@ -351,24 +360,49 @@
       }
     }
 
+    function getStatusClass(status) {
+      const st = (status || '').toUpperCase();
+      if (st === 'AGUARDANDO PAGAMENTO') return 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
+      if (st === 'AGUARDANDO RETIRADA OU ENTREGA') return 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold';
+      return 'bg-amber-100 text-amber-800 border-amber-300 font-bold';
+    }
+
     function renderizarPedidos() {
       const tbody = document.getElementById('tabela-pedidos');
       if (!tbody) return;
       tbody.innerHTML = '';
-      if (pedidos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido cadastrado.</td></tr>`;
+
+      const termoBusca = (document.getElementById('busca-pedido')?.value || '').toLowerCase();
+
+      const pedidosFiltrados = pedidos.filter(p => 
+        p.client.toLowerCase().includes(termoBusca) || 
+        p.product.toLowerCase().includes(termoBusca)
+      );
+
+      if (pedidosFiltrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido encontrado.</td></tr>`;
         return;
       }
-      pedidos.forEach(p => {
+
+      pedidosFiltrados.forEach(p => {
         const faltaReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
         const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
+        const stAtual = (p.status_production || 'EM PRODUÇÃO').toUpperCase();
+
+        const selectStatusInline = `
+          <select onchange="alterarStatusPedido(${p.id}, this.value)" class="text-xs font-bold px-2 py-1 rounded border cursor-pointer focus:outline-none mt-1 ${getStatusClass(stAtual)}">
+            <option value="AGUARDANDO PAGAMENTO" ${stAtual === 'AGUARDANDO PAGAMENTO' ? 'selected' : ''}>AGUARDANDO PAGAMENTO</option>
+            <option value="EM PRODUÇÃO" ${stAtual === 'EM PRODUÇÃO' ? 'selected' : ''}>EM PRODUÇÃO</option>
+            <option value="AGUARDANDO RETIRADA OU ENTREGA" ${stAtual === 'AGUARDANDO RETIRADA OU ENTREGA' ? 'selected' : ''}>AGUARDANDO RETIRADA OU ENTREGA</option>
+          </select>
+        `;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="p-3 font-bold">${p.client} <span class="text-xs font-normal text-slate-500">(${p.product})</span></td>
           <td class="p-3">
             <span class="text-xs font-semibold px-2 py-0.5 rounded ${p.production_type === 'TERCEIRO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">${p.production_type}</span>
-            <span class="text-xs font-medium px-2 py-0.5 bg-slate-100 rounded block mt-1 w-max">${p.status_production || 'Em Produção'}</span>
+            <div class="mt-1">${selectStatusInline}</div>
           </td>
           <td class="p-3 text-right">
             <div class="font-bold text-slate-800">R$ ${(p.sale_value || 0).toFixed(2)}</div>
@@ -390,6 +424,15 @@
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    async function alterarStatusPedido(id, novoStatus) {
+      await fetch(`/api/orders/${id}/status`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ status_production: novoStatus })
+      });
+      carregarDados();
     }
 
     function renderizarBills() {
@@ -435,15 +478,28 @@
 
       pedidos.forEach(p => {
         const faltaReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
+        const st = (p.status_production || '').toUpperCase();
+
+        // Só considera no Fluxo de Caixa se tiver saldo restante a receber e NÃO estiver com status travado em AGUARDANDO PAGAMENTO
         if (faltaReceber > 0 && p.client_due_date && p.client_due_date.startsWith(mesAno)) {
-          lancamentos.push({
-            data: p.client_due_date,
-            origem: 'Pedido Cliente',
-            descricao: `Recebimento: ${p.client}`,
-            entrada: faltaReceber,
-            saida: 0
-          });
-          saldo += faltaReceber;
+          if (st !== 'AGUARDANDO PAGAMENTO') {
+            lancamentos.push({
+              data: p.client_due_date,
+              origem: 'Pedido Cliente',
+              descricao: `Recebimento: ${p.client}`,
+              entrada: faltaReceber,
+              saida: 0
+            });
+            saldo += faltaReceber;
+          } else {
+            lancamentos.push({
+              data: p.client_due_date,
+              origem: 'Pedido Cliente',
+              descricao: `⚠️ (Pendente/Inadimplente) Recebimento: ${p.client}`,
+              entrada: 0,
+              saida: 0
+            });
+          }
         }
 
         const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
@@ -514,7 +570,7 @@
         production_type: document.getElementById('ped_production_type').value,
         supplier: document.getElementById('ped_supplier').value || "Fornecedor",
         supplier_cost: parseFloat(document.getElementById('ped_supplier_cost').value) || 0,
-        status_production: "Em Produção",
+        status_production: document.getElementById('ped_status_production').value,
         client_due_date: document.getElementById('ped_client_due_date').value || null,
         supplier_due_date: document.getElementById('ped_supplier_due_date').value || null,
         sale_value: parseFloat(document.getElementById('ped_sale_value').value) || 0,
