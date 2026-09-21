@@ -37,7 +37,6 @@
 
   <main class="max-w-7xl mx-auto px-4 py-6">
 
-    <!-- ABAS REORDENADAS -->
     <div class="flex border-b border-slate-200 mb-6 bg-white rounded-t-xl px-4 overflow-x-auto">
       <button onclick="mudarAba('pedidos')" id="tab-pedidos" class="py-3 px-6 text-sm font-medium text-slate-600 tab-active flex items-center gap-2 whitespace-nowrap">
         <i class="fa-solid fa-list-check"></i> 1. Controle de Pedidos
@@ -61,10 +60,10 @@
           <thead class="bg-slate-50 border-b text-xs uppercase text-slate-500">
             <tr>
               <th class="p-3">Cliente / Produto</th>
-              <th class="p-3">Tipo</th>
-              <th class="p-3">Status</th>
-              <th class="p-3 text-right">Venda</th>
-              <th class="p-3 text-right">Custo Forn.</th>
+              <th class="p-3">Tipo / Status</th>
+              <th class="p-3 text-right">Venda / Falta Rec.</th>
+              <th class="p-3 text-right">Custo / Falta Pag. Forn.</th>
+              <th class="p-3 text-center">Ações</th>
             </tr>
           </thead>
           <tbody id="tabela-pedidos" class="divide-y divide-slate-100"></tbody>
@@ -117,7 +116,7 @@
 
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
         <h2 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-list-ol text-blue-600"></i> Cronograma Consolidado (Resultado Operacional + Financeiro)
+          <i class="fa-solid fa-list-ol text-blue-600"></i> Cronograma Consolidado (Saldos Restantes)
         </h2>
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b">
@@ -125,8 +124,8 @@
               <th class="p-2.5">Vencimento</th>
               <th class="p-2.5">Origem</th>
               <th class="p-2.5">Descrição</th>
-              <th class="p-2.5 text-right">Entrada</th>
-              <th class="p-2.5 text-right">Saída</th>
+              <th class="p-2.5 text-right">Entrada (Falta Rec.)</th>
+              <th class="p-2.5 text-right">Saída (Falta Pag.)</th>
             </tr>
           </thead>
           <tbody id="tabela-cronograma-fluxo" class="divide-y divide-slate-100"></tbody>
@@ -138,7 +137,7 @@
 
   <!-- MODAL ADICIONAR NOVO PEDIDO -->
   <div id="modal-pedido" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
       <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
         <h3 class="font-bold text-base">Novo Pedido</h3>
         <button onclick="fecharModalPedido()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -165,16 +164,37 @@
             </select>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+
+        <!-- VALORES DO CLIENTE -->
+        <div class="p-3 bg-blue-50/50 border border-blue-100 rounded-lg grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Valor Venda (R$)</label>
-            <input type="number" step="0.01" id="ped_sale_value" value="0.00" class="w-full p-2 border rounded">
+            <label class="block text-xs font-semibold text-blue-900 mb-1">Valor Venda (R$)</label>
+            <input type="number" step="0.01" id="ped_sale_value" value="0.00" class="w-full p-2 border rounded bg-white">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Custo Fornec. (R$)</label>
-            <input type="number" step="0.01" id="ped_supplier_cost" value="0.00" class="w-full p-2 border rounded">
+            <label class="block text-xs font-semibold text-blue-900 mb-1">Valor Já Pago p/ Cliente</label>
+            <input type="number" step="0.01" id="ped_paid_by_client" value="0.00" class="w-full p-2 border rounded bg-white">
           </div>
         </div>
+
+        <!-- VALORES DO FORNECEDOR -->
+        <div class="p-3 bg-purple-50/50 border border-purple-100 rounded-lg space-y-2">
+          <div>
+            <label class="block text-xs font-semibold text-purple-900 mb-1">Nome Fornecedor</label>
+            <input type="text" id="ped_supplier" placeholder="Ex: Gráfica Zap" class="w-full p-2 border rounded bg-white">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-purple-900 mb-1">Custo Fornec. (R$)</label>
+              <input type="number" step="0.01" id="ped_supplier_cost" value="0.00" class="w-full p-2 border rounded bg-white">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-purple-900 mb-1">Já Pago ao Fornec. (R$)</label>
+              <input type="number" step="0.01" id="ped_paid_to_supplier" value="0.00" class="w-full p-2 border rounded bg-white">
+            </div>
+          </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Venc. Recebimento</label>
@@ -245,7 +265,7 @@
     </div>
   </div>
 
-  <!-- MODAL PERFIS / USUÁRIOS -->
+  <!-- MODAL PERFIS -->
   <div id="modal-perfil" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
       <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
@@ -340,13 +360,33 @@
         return;
       }
       pedidos.forEach(p => {
+        const faltaReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
+        const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="p-3 font-bold">${p.client} <span class="text-xs font-normal text-slate-500">(${p.product})</span></td>
-          <td class="p-3"><span class="text-xs font-semibold px-2 py-0.5 rounded ${p.production_type === 'TERCEIRO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">${p.production_type}</span></td>
-          <td class="p-3"><span class="text-xs font-medium px-2 py-0.5 bg-slate-100 rounded">${p.status_production || 'Aguardando Arte'}</span></td>
-          <td class="p-3 text-right font-bold text-slate-800">R$ ${(p.sale_value || 0).toFixed(2)}</td>
-          <td class="p-3 text-right text-rose-600 font-semibold">R$ ${(p.supplier_cost || 0).toFixed(2)}</td>
+          <td class="p-3">
+            <span class="text-xs font-semibold px-2 py-0.5 rounded ${p.production_type === 'TERCEIRO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">${p.production_type}</span>
+            <span class="text-xs font-medium px-2 py-0.5 bg-slate-100 rounded block mt-1 w-max">${p.status_production || 'Em Produção'}</span>
+          </td>
+          <td class="p-3 text-right">
+            <div class="font-bold text-slate-800">R$ ${(p.sale_value || 0).toFixed(2)}</div>
+            <div class="text-xs ${faltaReceber > 0 ? 'text-amber-600 font-semibold' : 'text-emerald-600 font-semibold'}">
+              ${faltaReceber > 0 ? 'Falta: R$ ' + faltaReceber.toFixed(2) : 'Pago total'}
+            </div>
+          </td>
+          <td class="p-3 text-right">
+            ${p.production_type === 'TERCEIRO' ? `
+              <div class="font-bold text-slate-800">R$ ${(p.supplier_cost || 0).toFixed(2)}</div>
+              <div class="text-xs ${faltaPagarForn > 0 ? 'text-rose-600 font-semibold' : 'text-emerald-600 font-semibold'}">
+                ${faltaPagarForn > 0 ? 'Falta: R$ ' + faltaPagarForn.toFixed(2) : 'Quitado'}
+              </div>
+            ` : '<span class="text-slate-300">-</span>'}
+          </td>
+          <td class="p-3 text-center">
+            <button onclick="deletarPedido(${p.id})" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
@@ -394,28 +434,28 @@
       let saldo = 0;
 
       pedidos.forEach(p => {
-        const aReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
-        if (aReceber > 0 && p.client_due_date && p.client_due_date.startsWith(mesAno)) {
+        const faltaReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
+        if (faltaReceber > 0 && p.client_due_date && p.client_due_date.startsWith(mesAno)) {
           lancamentos.push({
             data: p.client_due_date,
             origem: 'Pedido Cliente',
             descricao: `Recebimento: ${p.client}`,
-            entrada: aReceber,
+            entrada: faltaReceber,
             saida: 0
           });
-          saldo += aReceber;
+          saldo += faltaReceber;
         }
 
-        const aPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
-        if (aPagarForn > 0 && p.supplier_due_date && p.supplier_due_date.startsWith(mesAno)) {
+        const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
+        if (faltaPagarForn > 0 && p.supplier_due_date && p.supplier_due_date.startsWith(mesAno)) {
           lancamentos.push({
             data: p.supplier_due_date,
             origem: 'Fornecedor',
-            descricao: `Pagamento: ${p.supplier || 'Terceiro'}`,
+            descricao: `Pagamento: ${p.supplier || 'Terceiro'} (Ref. ${p.client})`,
             entrada: 0,
-            saida: aPagarForn
+            saida: faltaPagarForn
           });
-          saldo -= aPagarForn;
+          saldo -= faltaPagarForn;
         }
       });
 
@@ -453,12 +493,11 @@
       document.getElementById('saldo-projetado-fluxo').innerText = `R$ ${saldo.toFixed(2)}`;
     }
 
-    // ABRIR E FECHAR MODAIS
     function abrirModalPedido() {
       const selectEntity = document.getElementById('ped_entity');
       selectEntity.innerHTML = '';
       if (profiles.length === 0) {
-        selectEntity.innerHTML = '<option value="Geral">Geral</option>';
+        selectEntity.innerHTML = '<option value="Empresas">Empresas</option>';
       } else {
         profiles.forEach(p => selectEntity.innerHTML += `<option value="${p.name}">${p.name}</option>`);
       }
@@ -473,14 +512,14 @@
         client: document.getElementById('ped_client').value,
         product: document.getElementById('ped_product').value,
         production_type: document.getElementById('ped_production_type').value,
-        supplier: "Fornecedor",
+        supplier: document.getElementById('ped_supplier').value || "Fornecedor",
         supplier_cost: parseFloat(document.getElementById('ped_supplier_cost').value) || 0,
-        status_production: "Aguardando Arte",
+        status_production: "Em Produção",
         client_due_date: document.getElementById('ped_client_due_date').value || null,
         supplier_due_date: document.getElementById('ped_supplier_due_date').value || null,
         sale_value: parseFloat(document.getElementById('ped_sale_value').value) || 0,
-        paid_by_client: 0,
-        paid_to_supplier: 0
+        paid_by_client: parseFloat(document.getElementById('ped_paid_by_client').value) || 0,
+        paid_to_supplier: parseFloat(document.getElementById('ped_paid_to_supplier').value) || 0
       };
 
       await fetch('/api/orders', {
@@ -491,6 +530,13 @@
 
       fecharModalPedido();
       carregarDados();
+    }
+
+    async function deletarPedido(id) {
+      if(confirm('Tem certeza que deseja excluir este pedido?')) {
+        await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+        carregarDados();
+      }
     }
 
     function abrirModalBill() {
