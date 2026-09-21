@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ERP Unificado - Pedidos, Financeiro & Caixa</title>
+  
+  <!-- Suporte a PWA (Instalação como App no Chrome) -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -22,6 +30,10 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <!-- BOTÃO DE INSTALAÇÃO DO PWA -->
+        <button id="btn-install-app" onclick="instalarApp()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+          <i class="fa-solid fa-download"></i> Baixar App
+        </button>
         <button onclick="abrirModalPerfil()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold">
           <i class="fa-solid fa-users"></i> Perfis/Usuários
         </button>
@@ -73,10 +85,7 @@
 
     <!-- ABA 2: FINANCEIRO GERAL -->
     <section id="sec-financeiro" class="hidden space-y-6">
-      
-      <div id="box-cartoes" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Renderizado via JS -->
-      </div>
+      <div id="box-cartoes" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
 
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-xl border border-slate-200 gap-4">
         <div>
@@ -117,11 +126,9 @@
 
     <!-- ABA 3: FLUXO DE CAIXA -->
     <section id="sec-fluxo" class="hidden space-y-6">
-      
       <div class="bg-slate-900 text-white rounded-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4 shadow-md">
-        
         <div class="flex flex-wrap items-center gap-4">
-          <!-- SELETOR DE PERFIL DO FLUXO -->
+          <!-- SELETOR DE PERFIL -->
           <div class="flex flex-col">
             <label class="text-[10px] font-bold text-slate-400 uppercase mb-1"><i class="fa-solid fa-user-tag text-blue-400 mr-1"></i>Perfil / Titular</label>
             <select id="filtro-perfil-fluxo" onchange="renderizarFluxo()" class="bg-slate-800 text-white font-bold text-xs p-2 rounded border border-slate-700 focus:outline-none cursor-pointer">
@@ -386,6 +393,25 @@
     let profiles = [];
     let cards = [];
     let saldoInicial = 0.0;
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btnInstall = document.getElementById('btn-install-app');
+      if (btnInstall) btnInstall.classList.remove('hidden');
+    });
+
+    async function instalarApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          document.getElementById('btn-install-app').classList.add('hidden');
+        }
+        deferredPrompt = null;
+      }
+    }
 
     const hoje = new Date();
     const mesAtualStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
@@ -603,7 +629,6 @@
       let lancamentos = [];
       let saldo = saldoInicial;
 
-      // 1. PEDIDOS DE CLIENTES (FILTRADOS POR PERFIL SE HOUVER)
       pedidos.forEach(p => {
         if (perfilSel !== 'ALL' && p.entity !== perfilSel) return;
 
@@ -626,7 +651,6 @@
         }
       });
 
-      // 2. CONTAS E FATURAS DE CARTÃO (FILTRADAS POR PERFIL)
       let faturasCartao = {};
 
       bills.forEach(b => {
@@ -645,7 +669,6 @@
 
       Object.keys(faturasCartao).forEach(cardId => {
         const c = cards.find(x => x.id == cardId);
-        // Se o perfil do cartão não for o perfil filtrado, descarta
         if (perfilSel !== 'ALL' && c && c.entity !== perfilSel) return;
 
         const dataVencimento = c ? `${mesAno}-${String(c.due_day).padStart(2, '0')}` : `${mesAno}-10`;
