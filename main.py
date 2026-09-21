@@ -150,6 +150,13 @@ class OrderStatusUpdate(BaseModel):
 class BalanceUpdate(BaseModel):
     initial_balance: float
 
+@app.get("/manifest.json")
+def get_manifest():
+    manifest_path = get_resource_path("manifest.json")
+    if os.path.exists(manifest_path):
+        return FileResponse(manifest_path, media_type="application/json")
+    raise HTTPException(status_code=404, detail="Manifest não encontrado")
+
 @app.get("/api/profiles")
 def get_profiles(db: Session = Depends(get_db)):
     return db.query(ProfileModel).all()
