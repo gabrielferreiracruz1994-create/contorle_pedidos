@@ -79,14 +79,24 @@
         <!-- Renderizado via JS -->
       </div>
 
-      <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-xl border border-slate-200 gap-4">
         <div>
           <h2 class="text-base font-bold text-slate-800">Contas, Despesas e Faturas</h2>
-          <p class="text-xs text-slate-500">Lançamentos pessoais e empresariais. Compras no cartão serão agrupadas na fatura no Fluxo de Caixa.</p>
+          <p class="text-xs text-slate-500">Lançamentos pessoais e empresariais. Selecione o mês para visualizar.</p>
         </div>
-        <button onclick="abrirModalBill()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-          <i class="fa-solid fa-plus"></i> + Nova Conta / Lançamento
-        </button>
+
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <!-- NAV MÊS FINANCEIRO -->
+          <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+            <button onclick="navegarMes('filtro-mes-fin', -1); renderizarBills();" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-chevron-left"></i></button>
+            <input type="month" id="filtro-mes-fin" onchange="renderizarBills()" class="bg-transparent font-bold text-xs p-1 text-slate-700 focus:outline-none">
+            <button onclick="navegarMes('filtro-mes-fin', 1); renderizarBills();" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+
+          <button onclick="abrirModalBill()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-plus"></i> Nova Conta
+          </button>
+        </div>
       </div>
 
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -109,14 +119,27 @@
 
     <!-- ABA 3: FLUXO DE CAIXA -->
     <section id="sec-fluxo" class="hidden space-y-6">
-      <div class="bg-slate-900 text-white rounded-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+      
+      <div class="bg-slate-900 text-white rounded-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4 shadow-md">
         <div class="flex items-center gap-3">
           <label class="text-xs font-bold text-slate-400 uppercase">Mês de Análise:</label>
-          <input type="month" id="filtro-mes-fluxo" onchange="renderizarFluxo()" class="bg-slate-800 text-white p-2 rounded border border-slate-700 text-sm font-bold">
+          <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
+            <button onclick="navegarMes('filtro-mes-fluxo', -1); renderizarFluxo();" class="p-1.5 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-chevron-left"></i></button>
+            <input type="month" id="filtro-mes-fluxo" onchange="renderizarFluxo()" class="bg-transparent text-white p-1 text-sm font-bold focus:outline-none">
+            <button onclick="navegarMes('filtro-mes-fluxo', 1); renderizarFluxo();" class="p-1.5 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
         </div>
-        <div class="text-right">
-          <div class="text-xs text-slate-400 uppercase font-bold">Resultado Final Previsto do Caixa</div>
-          <div id="saldo-projetado-fluxo" class="text-2xl font-black text-emerald-400">R$ 0,00</div>
+
+        <div class="flex items-center gap-6">
+          <div class="bg-slate-800 p-2.5 rounded-lg border border-slate-700 text-right">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase">Caixa / Saldo Atual (R$)</label>
+            <input type="number" step="0.01" id="saldo-inicial-input" onchange="salvarSaldoInicial()" class="bg-slate-900 text-emerald-400 font-bold text-right p-1 rounded border border-slate-700 w-32 focus:outline-none text-sm">
+          </div>
+
+          <div class="text-right">
+            <div class="text-xs text-slate-400 uppercase font-bold">Resultado Final Previsto</div>
+            <div id="saldo-projetado-fluxo" class="text-2xl font-black text-emerald-400">R$ 0,00</div>
+          </div>
         </div>
       </div>
 
@@ -222,7 +245,7 @@
         </div>
         <div class="flex justify-end gap-2 pt-3 border-t">
           <button type="button" onclick="fecharModalPedido()" class="px-4 py-2 border rounded text-xs">Cancelar</button>
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-semibold">Salvar Pedido</button>
+          <button type="submit" id="btn-save-order" class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-semibold">Salvar Pedido</button>
         </div>
       </form>
     </div>
@@ -284,7 +307,7 @@
         </div>
         <div class="flex justify-end gap-2 pt-3 border-t">
           <button type="button" onclick="fecharModalBill()" class="px-4 py-2 border rounded text-xs">Cancelar</button>
-          <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded text-xs font-semibold">Salvar Conta</button>
+          <button type="submit" id="btn-save-bill" class="px-4 py-2 bg-rose-600 text-white rounded text-xs font-semibold">Salvar Conta</button>
         </div>
       </form>
     </div>
@@ -350,23 +373,39 @@
     let bills = [];
     let profiles = [];
     let cards = [];
+    let saldoInicial = 0.0;
 
     const hoje = new Date();
-    document.getElementById('filtro-mes-fluxo').value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+    const mesAtualStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+    
+    document.getElementById('filtro-mes-fluxo').value = mesAtualStr;
+    document.getElementById('filtro-mes-fin').value = mesAtualStr;
+
+    function navegarMes(inputId, delta) {
+      const el = document.getElementById(inputId);
+      if(!el || !el.value) return;
+      const [ano, mes] = el.value.split('-').map(Number);
+      const d = new Date(ano, mes - 1 + delta, 1);
+      el.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
 
     async function carregarDados() {
       try {
-        const [resPedidos, resBills, resProfiles, resCards] = await Promise.all([
+        const [resPedidos, resBills, resProfiles, resCards, resBalance] = await Promise.all([
           fetch('/api/orders').then(r => r.ok ? r.json() : []),
           fetch('/api/bills').then(r => r.ok ? r.json() : []),
           fetch('/api/profiles').then(r => r.ok ? r.json() : []),
-          fetch('/api/cards').then(r => r.ok ? r.json() : [])
+          fetch('/api/cards').then(r => r.ok ? r.json() : []),
+          fetch('/api/settings/balance').then(r => r.ok ? r.json() : {initial_balance: 0})
         ]);
 
         pedidos = Array.isArray(resPedidos) ? resPedidos : [];
         bills = Array.isArray(resBills) ? resBills : [];
         profiles = Array.isArray(resProfiles) ? resProfiles : [];
         cards = Array.isArray(resCards) ? resCards : [];
+        saldoInicial = resBalance.initial_balance || 0.0;
+
+        document.getElementById('saldo-inicial-input').value = saldoInicial.toFixed(2);
 
         renderizarPedidos();
         renderizarCartoes();
@@ -377,7 +416,17 @@
       }
     }
 
-    // Lógica de Cores do Novo Status
+    async function salvarSaldoInicial() {
+      const val = parseFloat(document.getElementById('saldo-inicial-input').value) || 0;
+      saldoInicial = val;
+      await fetch('/api/settings/balance', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ initial_balance: val })
+      });
+      renderizarFluxo();
+    }
+
     function getStatusClass(status) {
       const st = (status || '').toUpperCase();
       if (st.includes('AGUARDANDO PAGAMENTO')) return 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
@@ -489,10 +538,11 @@
       if (!tbody) return;
       tbody.innerHTML = '';
       
-      const contasNormais = bills.filter(b => !b.card_id);
+      const mesSel = document.getElementById('filtro-mes-fin').value;
+      const contasNormais = bills.filter(b => !b.card_id && b.due_date && b.due_date.startsWith(mesSel));
       
       if (contasNormais.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhuma conta cadastrada fora de cartões.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhuma conta/despesa para o mês selecionado.</td></tr>`;
         return;
       }
       
@@ -524,7 +574,7 @@
       tbody.innerHTML = '';
 
       let lancamentos = [];
-      let saldo = 0;
+      let saldo = saldoInicial;
 
       // 1. PEDIDOS
       pedidos.forEach(p => {
@@ -553,18 +603,15 @@
       bills.forEach(b => {
         if (!b.is_paid && b.due_date && b.due_date.startsWith(mesAno)) {
           if(b.card_id) {
-            // Agrupar Fatura
             if(!faturasCartao[b.card_id]) faturasCartao[b.card_id] = 0;
             faturasCartao[b.card_id] += b.installment_amount;
           } else {
-            // Lançamento Direto
             lancamentos.push({ data: b.due_date, origem: `Despesa (${b.entity})`, descricao: `${b.creditor} ${b.is_recurrent ? '(Mensal)' : '('+b.installment_number+'/'+b.total_installments+')'}`, entrada: 0, saida: b.installment_amount || 0 });
             saldo -= (b.installment_amount || 0);
           }
         }
       });
 
-      // Inserir as faturas agrupadas
       Object.keys(faturasCartao).forEach(cardId => {
         const c = cards.find(x => x.id == cardId);
         const dataVencimento = c ? `${mesAno}-${String(c.due_day).padStart(2, '0')}` : `${mesAno}-10`;
@@ -594,7 +641,9 @@
         });
       }
 
-      document.getElementById('saldo-projetado-fluxo').innerText = `R$ ${saldo.toFixed(2)}`;
+      const saldoEl = document.getElementById('saldo-projetado-fluxo');
+      saldoEl.innerText = `R$ ${saldo.toFixed(2)}`;
+      saldoEl.className = `text-2xl font-black ${saldo >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
     }
 
     function abrirModalPedido() {
@@ -608,6 +657,9 @@
 
     async function salvarPedido(e) {
       e.preventDefault();
+      const btn = document.getElementById('btn-save-order');
+      btn.disabled = true; btn.innerText = "Salvando...";
+
       const body = {
         entity: document.getElementById('ped_entity').value,
         client: document.getElementById('ped_client').value,
@@ -623,8 +675,12 @@
         paid_to_supplier: parseFloat(document.getElementById('ped_paid_to_supplier').value) || 0
       };
 
-      await fetch('/api/orders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
-      fecharModalPedido(); carregarDados();
+      try {
+        await fetch('/api/orders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+      } finally {
+        btn.disabled = false; btn.innerText = "Salvar Pedido";
+        fecharModalPedido(); carregarDados();
+      }
     }
 
     async function deletarPedido(id) {
@@ -634,7 +690,6 @@
       }
     }
 
-    // Lógica da Recorrência no Modal de Contas
     function toggleRecurrent() {
       const isRecurrent = document.getElementById('bill_is_recurrent').checked;
       const boxInst = document.getElementById('box_installments');
@@ -643,7 +698,7 @@
 
       if(isRecurrent) {
         boxInst.classList.add('hidden');
-        document.getElementById('bill_total_installments').value = 12; // Projeta 12 meses por padrão
+        document.getElementById('bill_total_installments').value = 12;
         lblTotal.innerText = "Valor Mensal (R$) *";
         lblInst.innerText = "Proj. Recorrente";
       } else {
@@ -682,6 +737,9 @@
 
     async function salvarBill(e) {
       e.preventDefault();
+      const btn = document.getElementById('btn-save-bill');
+      btn.disabled = true; btn.innerText = "Salvando...";
+
       const creditor = document.getElementById('bill_creditor').value;
       const entity = document.getElementById('bill_entity').value;
       const cardId = document.getElementById('bill_card_id').value;
@@ -690,34 +748,36 @@
       const totalAmountInput = parseFloat(document.getElementById('bill_total_amount').value);
       const totalInstallments = isRecurrent ? 12 : parseInt(document.getElementById('bill_total_installments').value);
       
-      // Se recorrente, o valor digitado é o da parcela. Se não, divide pelo numero de parcelas.
       const installmentAmount = isRecurrent ? totalAmountInput : (totalAmountInput / totalInstallments);
       const dueDateStr = document.getElementById('bill_due_date').value;
       const [ano, mes, dia] = dueDateStr.split('-').map(Number);
 
-      for(let i = 1; i <= totalInstallments; i++) {
-        const d = new Date(ano, mes - 1 + (i - 1), dia);
-        const dataFormatada = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      try {
+        for(let i = 1; i <= totalInstallments; i++) {
+          const d = new Date(ano, mes - 1 + (i - 1), dia);
+          const dataFormatada = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-        await fetch('/api/bills', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            creditor,
-            entity,
-            total_amount: isRecurrent ? totalAmountInput : totalAmountInput,
-            installment_number: i,
-            total_installments: totalInstallments,
-            installment_amount: installmentAmount,
-            due_date: dataFormatada,
-            is_recurrent: isRecurrent,
-            created_by_user: entity,
-            card_id: cardId ? parseInt(cardId) : null
-          })
-        });
+          await fetch('/api/bills', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              creditor,
+              entity,
+              total_amount: totalAmountInput,
+              installment_number: i,
+              total_installments: totalInstallments,
+              installment_amount: installmentAmount,
+              due_date: dataFormatada,
+              is_recurrent: isRecurrent,
+              created_by_user: entity,
+              card_id: cardId ? parseInt(cardId) : null
+            })
+          });
+        }
+      } finally {
+        btn.disabled = false; btn.innerText = "Salvar Conta";
+        fecharModalBill(); carregarDados();
       }
-
-      fecharModalBill(); carregarDados();
     }
 
     async function alternarStatusBill(id, status) {
