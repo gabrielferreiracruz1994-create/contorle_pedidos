@@ -1,6 +1,11 @@
 import os
 import sys
 from typing import Optional
+from dotenv import load_dotenv
+
+# Carrega a variável DATABASE_URL do arquivo .env
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
