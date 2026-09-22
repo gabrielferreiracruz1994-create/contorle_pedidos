@@ -1,108 +1,140 @@
-import os
-import sys
-import uuid
-from typing import Optional
-from dotenv import load_dotenv
-
-load_dotenv()
-
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean
+from sqlalchemy.orm import declarative_base, sessionmaker
+from typing import List, Optional
+import os
 
-def get_resource_path(relative_path: str) -> str:
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
-
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./financeiro.db")
-
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL)
-
+# ==========================================
+# CONFIGURAÇÃO DO BANCO DE DADOS (SQLite)
+# ==========================================
+DATABASE_URL = "sqlite:///./erp_unificado.db"
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-class ProfileModel(Base):
-    __tablename__ = "profiles"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, nullable=False)
-
-class CardModel(Base):
-    __tablename__ = "cards"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    entity = Column(String, nullable=False)
-    total_limit = Column(Float, nullable=False)
-    closing_day = Column(Integer, nullable=False)
-    due_day = Column(Integer, nullable=False)
-
-class BillModel(Base):
-    __tablename__ = "bills"
-    id = Column(Integer, primary_key=True, index=True)
-    group_id = Column(String, nullable=True)
-    creditor = Column(String, nullable=False)
-    entity = Column(String, nullable=False)
-    total_amount = Column(Float, nullable=False)
-    installment_number = Column(Integer, nullable=False)
-    total_installments = Column(Integer, nullable=False)
-    installment_amount = Column(Float, nullable=False)
-    due_date = Column(String, nullable=False)
-    is_paid = Column(Boolean, default=False)
-    is_recurrent = Column(Boolean, default=False)
-    created_by_user = Column(String, nullable=False)
-    card_id = Column(Integer, ForeignKey("cards.id", ondelete="CASCADE"), nullable=True)
-
-class OrderModel(Base):
+# ==========================================
+# MODELOS DO BANCO DE DADOS (SQLAlchemy)
+# ==========================================
+class OrderDB(Base):
     __tablename__ = "orders"
     id = Column(Integer, primary_key=True, index=True)
-    entity = Column(String, nullable=False)
-    client = Column(String, nullable=False)
-    phone = Column(String, nullable=True)
-    product = Column(String, nullable=False)
-    production_type = Column(String, nullable=False)
+    entity = Column(String, index=True)
+    client = Column(String)
+    product = Column(String)
+    production_type = Column(String)
     supplier = Column(String, nullable=True)
     supplier_cost = Column(Float, default=0.0)
-    status_production = Column(String, default="EM PRODUÇÃO")
-    supplier_due_date = Column(String, nullable=True)
+    status_production = Column(String)
     client_due_date = Column(String, nullable=True)
+    supplier_due_date = Column(String, nullable=True)
     sale_value = Column(Float, default=0.0)
     paid_by_client = Column(Float, default=0.0)
     paid_to_supplier = Column(Float, default=0.0)
     is_recurrent = Column(Boolean, default=False)
 
-class SettingsModel(Base):
+class BillDB(Base):
+    __tablename__ = "bills"
+    id = Column(Integer, primary_key=True, index=True)
+    group_id = Column(String, nullable=True, index=True)
+    creditor = Column(String)
+    entity = Column(String)
+    total_amount = Column(Float, default=0.0)
+    installment_number = Column(Integer, default=1)
+    total_installments = Column(Integer, default=1)
+    installment_amount = Column(Float, default=0.0)
+    due_date = Column(String)
+    is_recurrent = Column(Boolean, default=False)
+    is_paid = Column(Boolean, default=False)
+    created_by_user = Column(String, nullable=True)
+    card_id = Column(Integer, nullable=True)
+
+class ProfileDB(Base):
+    __tablename__ = "profiles"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+
+class CardDB(Base):
+    __tablename__ = "cards"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    entity = Column(String)
+    total_limit = Column(Float, default=0.0)
+    closing_day = Column(Integer)
+    due_day = Column(Integer)
+
+class SettingDB(Base):
     __tablename__ = "settings"
     key = Column(String, primary_key=True, index=True)
-    value = Column(String, nullable=False)
+    value = Column(String)
 
 Base.metadata.create_all(bind=engine)
 
-db_init = SessionLocal()
-if db_init.query(ProfileModel).count() == 0:
-    db_init.add_all([
-        ProfileModel(name="Gabriel"),
-        ProfileModel(name="Jéssica"),
-        ProfileModel(name="Empresas")
-    ])
-    db_init.commit()
+# ==========================================
+# SCHEMAS DE VALIDAÇÃO (Pydantic)
+# ==========================================
+class OrderSchema(BaseModel):
+    entity: str
+    client: str
+    product: str
+    production_type: str
+    supplier: Optional[str] = ""
+    supplier_cost: float = 0.0
+    status_production: str
+    client_due_date: Optional[str] = None
+    supplier_due_date: Optional[str] = None
+    sale_value: float = 0.0
+    paid_by_client: float = 0.0
+    paid_to_supplier: float = 0.0
+    is_recurrent: bool = False
 
-if not db_init.query(SettingsModel).filter(SettingsModel.key == "initial_balance").first():
-    db_init.add(SettingsModel(key="initial_balance", value="0.00"))
-    db_init.commit()
+class OrderStatusSchema(BaseModel):
+    status_production: str
 
-db_init.close()
+class BillSchema(BaseModel):
+    group_id: Optional[str] = None
+    creditor: str
+    entity: str
+    total_amount: float = 0.0
+    installment_number: int = 1
+    total_installments: int = 1
+    installment_amount: float = 0.0
+    due_date: str
+    is_recurrent: bool = False
+    card_id: Optional[int] = None
 
-app = FastAPI()
+class BillUpdateSchema(BaseModel):
+    mode: str = "SINGLE" # SINGLE, FUTURE, ALL
+    creditor: str
+    entity: str
+    installment_amount: float
+    due_date: str
+    card_id: Optional[int] = None
 
+class BillStatusSchema(BaseModel):
+    is_paid: bool
+
+class ProfileSchema(BaseModel):
+    name: str
+
+class CardSchema(BaseModel):
+    name: str
+    entity: str
+    total_limit: float
+    closing_day: int
+    due_day: int
+
+class BalanceSchema(BaseModel):
+    initial_balance: float
+
+# ==========================================
+# INICIALIZAÇÃO DA API
+# ==========================================
+app = FastAPI(title="ERP Unificado API")
+
+# Dependência do Banco de Dados
 def get_db():
     db = SessionLocal()
     try:
@@ -110,266 +142,241 @@ def get_db():
     finally:
         db.close()
 
-class ProfileCreate(BaseModel):
-    name: str
+# Rota Principal - Serve o HTML
+@app.get("/", response_class=HTMLResponse)
+def read_root():
+    template_path = os.path.join(os.path.dirname(__file__), "templates", "index.html")
+    with open(template_path, "r", encoding="utf-8") as file:
+        return file.read()
 
-class CardCreate(BaseModel):
-    name: str
-    entity: str
-    total_limit: float
-    closing_day: int
-    due_day: int
-
-class BillCreate(BaseModel):
-    group_id: Optional[str] = None
-    creditor: str
-    entity: str
-    total_amount: float
-    installment_number: int
-    total_installments: int
-    installment_amount: float
-    due_date: str
-    is_recurrent: bool
-    created_by_user: str
-    card_id: Optional[int] = None
-
-class BillUpdateSchema(BaseModel):
-    mode: str
-    creditor: str
-    entity: str
-    installment_amount: float
-    due_date: str
-    card_id: Optional[int] = None
-
-class BillStatusUpdate(BaseModel):
-    is_paid: bool
-
-class OrderSchema(BaseModel):
-    entity: str
-    client: str
-    phone: Optional[str] = None
-    product: str
-    production_type: str
-    supplier: Optional[str] = None
-    supplier_cost: float
-    status_production: str
-    supplier_due_date: Optional[str] = None
-    client_due_date: Optional[str] = None
-    sale_value: float
-    paid_by_client: float
-    paid_to_supplier: float
-    is_recurrent: bool = False
-
-class OrderStatusUpdate(BaseModel):
-    status_production: str
-
-class BalanceUpdate(BaseModel):
-    initial_balance: float
-
-@app.get("/manifest.json")
-def get_manifest():
-    manifest_path = get_resource_path("manifest.json")
-    if os.path.exists(manifest_path):
-        return FileResponse(manifest_path, media_type="application/json")
-    raise HTTPException(status_code=404, detail="Manifest não encontrado")
-
-@app.get("/api/profiles")
-def get_profiles(db: Session = Depends(get_db)):
-    return db.query(ProfileModel).all()
-
-@app.post("/api/profiles")
-def create_profile(profile: ProfileCreate, db: Session = Depends(get_db)):
-    existing = db.query(ProfileModel).filter(ProfileModel.name == profile.name).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Perfil já existe")
-    db_profile = ProfileModel(name=profile.name)
-    db.add(db_profile); db.commit(); db.refresh(db_profile)
-    return db_profile
-
-@app.delete("/api/profiles/{profile_id}")
-def delete_profile(profile_id: int, db: Session = Depends(get_db)):
-    profile = db.query(ProfileModel).filter(ProfileModel.id == profile_id).first()
-    if profile:
-        db.delete(profile); db.commit()
-        return {"message": "Perfil excluído"}
-    raise HTTPException(status_code=404, detail="Perfil não encontrado")
-
-@app.get("/api/cards")
-def get_cards(db: Session = Depends(get_db)):
-    return db.query(CardModel).all()
-
-@app.post("/api/cards")
-def create_card(card: CardCreate, db: Session = Depends(get_db)):
-    db_card = CardModel(**card.dict())
-    db.add(db_card); db.commit(); db.refresh(db_card)
-    return db_card
-
-@app.put("/api/cards/{card_id}")
-def update_card(card_id: int, card_data: CardCreate, db: Session = Depends(get_db)):
-    card = db.query(CardModel).filter(CardModel.id == card_id).first()
-    if not card:
-        raise HTTPException(status_code=404, detail="Cartão não encontrado")
-    for key, value in card_data.dict().items():
-        setattr(card, key, value)
-    db.commit()
-    return {"message": "Cartão atualizado"}
-
-@app.delete("/api/cards/{card_id}")
-def delete_card(card_id: int, db: Session = Depends(get_db)):
-    card = db.query(CardModel).filter(CardModel.id == card_id).first()
-    if card:
-        db.query(BillModel).filter(BillModel.card_id == card_id).delete()
-        db.delete(card); db.commit()
-        return {"message": "Cartão excluído"}
-    raise HTTPException(status_code=404, detail="Cartão não encontrado")
-
-@app.get("/api/bills")
-def get_bills(db: Session = Depends(get_db)):
-    return db.query(BillModel).all()
-
-@app.post("/api/bills")
-def create_bill(bill: BillCreate, db: Session = Depends(get_db)):
-    db_bill = BillModel(**bill.dict())
-    db.add(db_bill); db.commit(); db.refresh(db_bill)
-    return db_bill
-
-@app.put("/api/bills/{bill_id}")
-def update_bill(bill_id: int, data: BillUpdateSchema, db: Session = Depends(get_db)):
-    target = db.query(BillModel).filter(BillModel.id == bill_id).first()
-    if not target:
-        raise HTTPException(status_code=404, detail="Conta não encontrada")
-
-    query = db.query(BillModel)
-    if target.group_id:
-        query = query.filter(BillModel.group_id == target.group_id)
-    else:
-        query = query.filter(
-            BillModel.creditor == target.creditor,
-            BillModel.total_installments == target.total_installments,
-            BillModel.entity == target.entity
-        )
-
-    if data.mode == "SINGLE":
-        target.creditor = data.creditor
-        target.entity = data.entity
-        target.installment_amount = data.installment_amount
-        target.due_date = data.due_date
-        target.card_id = data.card_id
-    elif data.mode == "FUTURE":
-        targets = query.filter(BillModel.installment_number >= target.installment_number).all()
-        for b in targets:
-            b.creditor = data.creditor
-            b.entity = data.entity
-            b.installment_amount = data.installment_amount
-            b.card_id = data.card_id
-        target.due_date = data.due_date
-    elif data.mode == "ALL":
-        targets = query.all()
-        for b in targets:
-            b.creditor = data.creditor
-            b.entity = data.entity
-            b.installment_amount = data.installment_amount
-            b.card_id = data.card_id
-        target.due_date = data.due_date
-
-    db.commit()
-    return {"message": "Lançamento(s) atualizado(s) com sucesso"}
-
-@app.put("/api/bills/{bill_id}/status")
-def update_bill_status(bill_id: int, status_data: BillStatusUpdate, db: Session = Depends(get_db)):
-    bill = db.query(BillModel).filter(BillModel.id == bill_id).first()
-    if bill:
-        bill.is_paid = status_data.is_paid
-        db.commit()
-        return {"message": "Status atualizado"}
-    raise HTTPException(status_code=404, detail="Dívida não encontrada")
-
-@app.delete("/api/bills/{bill_id}")
-def delete_bill(bill_id: int, mode: str = "SINGLE", db: Session = Depends(get_db)):
-    target = db.query(BillModel).filter(BillModel.id == bill_id).first()
-    if not target:
-        raise HTTPException(status_code=404, detail="Não encontrado")
-
-    query = db.query(BillModel)
-    if target.group_id:
-        query = query.filter(BillModel.group_id == target.group_id)
-    else:
-        query = query.filter(
-            BillModel.creditor == target.creditor,
-            BillModel.total_installments == target.total_installments,
-            BillModel.entity == target.entity
-        )
-
-    if mode == "SINGLE":
-        db.delete(target)
-    elif mode == "FUTURE":
-        query.filter(BillModel.installment_number >= target.installment_number).delete(synchronize_session=False)
-    elif mode == "ALL":
-        query.delete(synchronize_session=False)
-
-    db.commit()
-    return {"message": "Excluído com sucesso"}
-
-@app.get("/api/orders")
-def get_orders(db: Session = Depends(get_db)):
-    return db.query(OrderModel).all()
-
-@app.post("/api/orders")
-def create_order(order: OrderSchema, db: Session = Depends(get_db)):
-    db_order = OrderModel(**order.dict())
-    db.add(db_order); db.commit(); db.refresh(db_order)
-    return db_order
-
-@app.put("/api/orders/{order_id}")
-def update_order(order_id: int, order_data: OrderSchema, db: Session = Depends(get_db)):
-    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Pedido não encontrado")
-    for key, value in order_data.dict().items():
-        setattr(order, key, value)
-    db.commit()
-    return {"message": "Pedido atualizado com sucesso"}
-
-@app.put("/api/orders/{order_id}/status")
-def update_order_status(order_id: int, status_data: OrderStatusUpdate, db: Session = Depends(get_db)):
-    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
-    if order:
-        order.status_production = status_data.status_production
-        db.commit()
-        return {"message": "Status do pedido atualizado com sucesso"}
-    raise HTTPException(status_code=404, detail="Pedido não encontrado")
-
-@app.delete("/api/orders/{order_id}")
-def delete_order(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
-    if order:
-        db.delete(order); db.commit()
-        return {"message": "Pedido excluído"}
-    raise HTTPException(status_code=404, detail="Pedido não encontrado")
-
+# ==========================================
+# ROTAS: CONFIGURAÇÕES (Saldo Inicial)
+# ==========================================
 @app.get("/api/settings/balance")
-def get_balance(db: Session = Depends(get_db)):
-    setting = db.query(SettingsModel).filter(SettingsModel.key == "initial_balance").first()
-    val = float(setting.value) if setting else 0.0
-    return {"initial_balance": val}
+def get_balance():
+    db = SessionLocal()
+    setting = db.query(SettingDB).filter(SettingDB.key == "initial_balance").first()
+    db.close()
+    return {"initial_balance": float(setting.value) if setting else 0.0}
 
 @app.post("/api/settings/balance")
-def update_balance(data: BalanceUpdate, db: Session = Depends(get_db)):
-    setting = db.query(SettingsModel).filter(SettingsModel.key == "initial_balance").first()
-    if not setting:
-        setting = SettingsModel(key="initial_balance", value=str(data.initial_balance))
-        db.add(setting)
-    else:
+def set_balance(data: BalanceSchema):
+    db = SessionLocal()
+    setting = db.query(SettingDB).filter(SettingDB.key == "initial_balance").first()
+    if setting:
         setting.value = str(data.initial_balance)
+    else:
+        new_setting = SettingDB(key="initial_balance", value=str(data.initial_balance))
+        db.add(new_setting)
     db.commit()
-    return {"initial_balance": data.initial_balance}
+    db.close()
+    return {"success": True}
 
-@app.get("/")
-def read_root():
-    path_templates = get_resource_path(os.path.join("templates", "index.html"))
-    path_local = get_resource_path("index.html")
-    if os.path.exists(path_templates):
-        return FileResponse(path_templates)
-    elif os.path.exists(path_local):
-        return FileResponse(path_local)
-    return {"message": "Erro: Arquivo index.html não encontrado!"}
+# ==========================================
+# ROTAS: PERFIS
+# ==========================================
+@app.get("/api/profiles")
+def get_profiles():
+    db = SessionLocal()
+    profiles = db.query(ProfileDB).all()
+    db.close()
+    return profiles
+
+@app.post("/api/profiles")
+def create_profile(profile: ProfileSchema):
+    db = SessionLocal()
+    new_profile = ProfileDB(name=profile.name)
+    db.add(new_profile)
+    db.commit()
+    db.close()
+    return {"success": True}
+
+@app.delete("/api/profiles/{id}")
+def delete_profile(id: int):
+    db = SessionLocal()
+    db.query(ProfileDB).filter(ProfileDB.id == id).delete()
+    db.commit()
+    db.close()
+    return {"success": True}
+
+# ==========================================
+# ROTAS: CARTÕES
+# ==========================================
+@app.get("/api/cards")
+def get_cards():
+    db = SessionLocal()
+    cards = db.query(CardDB).all()
+    db.close()
+    return cards
+
+@app.post("/api/cards")
+def create_card(card: CardSchema):
+    db = SessionLocal()
+    new_card = CardDB(**card.dict())
+    db.add(new_card)
+    db.commit()
+    db.close()
+    return {"success": True}
+
+@app.put("/api/cards/{id}")
+def update_card(id: int, card: CardSchema):
+    db = SessionLocal()
+    db_card = db.query(CardDB).filter(CardDB.id == id).first()
+    if not db_card:
+        db.close()
+        raise HTTPException(status_code=404, detail="Cartão não encontrado")
+    for key, value in card.dict().items():
+        setattr(db_card, key, value)
+    db.commit()
+    db.close()
+    return {"success": True}
+
+@app.delete("/api/cards/{id}")
+def delete_card(id: int):
+    db = SessionLocal()
+    db.query(CardDB).filter(CardDB.id == id).delete()
+    # Desvincular faturas
+    bills = db.query(BillDB).filter(BillDB.card_id == id).all()
+    for b in bills:
+        b.card_id = None
+    db.commit()
+    db.close()
+    return {"success": True}
+
+# ==========================================
+# ROTAS: PEDIDOS
+# ==========================================
+@app.get("/api/orders")
+def get_orders():
+    db = SessionLocal()
+    orders = db.query(OrderDB).all()
+    db.close()
+    return orders
+
+@app.post("/api/orders")
+def create_order(order: OrderSchema):
+    db = SessionLocal()
+    new_order = OrderDB(**order.dict())
+    db.add(new_order)
+    db.commit()
+    db.close()
+    return {"success": True}
+
+@app.put("/api/orders/{id}")
+def update_order(id: int, order: OrderSchema):
+    db = SessionLocal()
+    db_order = db.query(OrderDB).filter(OrderDB.id == id).first()
+    if not db_order:
+        db.close()
+        raise HTTPException(status_code=404)
+    for key, value in order.dict().items():
+        setattr(db_order, key, value)
+    db.commit()
+    db.close()
+    return {"success": True}
+
+@app.put("/api/orders/{id}/status")
+def update_order_status(id: int, status: OrderStatusSchema):
+    db = SessionLocal()
+    db_order = db.query(OrderDB).filter(OrderDB.id == id).first()
+    if not db_order:
+        db.close()
+        raise HTTPException(status_code=404)
+    db_order.status_production = status.status_production
+    db.commit()
+    db.close()
+    return {"success": True}
+
+@app.delete("/api/orders/{id}")
+def delete_order(id: int):
+    db = SessionLocal()
+    db.query(OrderDB).filter(OrderDB.id == id).delete()
+    db.commit()
+    db.close()
+    return {"success": True}
+
+# ==========================================
+# ROTAS: FINANCEIRO E CONTAS (BILLS)
+# ==========================================
+@app.get("/api/bills")
+def get_bills():
+    db = SessionLocal()
+    bills = db.query(BillDB).all()
+    db.close()
+    return bills
+
+@app.post("/api/bills")
+def create_bill(bill: BillSchema):
+    db = SessionLocal()
+    new_bill = BillDB(**bill.dict())
+    db.add(new_bill)
+    db.commit()
+    db.close()
+    return {"success": True}
+
+@app.put("/api/bills/{id}/status")
+def update_bill_status(id: int, status: BillStatusSchema):
+    db = SessionLocal()
+    db_bill = db.query(BillDB).filter(BillDB.id == id).first()
+    if not db_bill:
+        db.close()
+        raise HTTPException(status_code=404)
+    db_bill.is_paid = status.is_paid
+    db.commit()
+    db.close()
+    return {"success": True}
+
+@app.put("/api/bills/{id}")
+def update_bill(id: int, update: BillUpdateSchema):
+    db = SessionLocal()
+    db_bill = db.query(BillDB).filter(BillDB.id == id).first()
+    if not db_bill:
+        db.close()
+        raise HTTPException(status_code=404)
+
+    # Lógica para alterar parcelas baseado no "mode" selecionado (SINGLE, FUTURE, ALL)
+    if update.mode == "SINGLE" or not db_bill.group_id:
+        db_bill.creditor = update.creditor
+        db_bill.entity = update.entity
+        db_bill.installment_amount = update.installment_amount
+        db_bill.due_date = update.due_date
+        db_bill.card_id = update.card_id
+    else:
+        query = db.query(BillDB).filter(BillDB.group_id == db_bill.group_id)
+        if update.mode == "FUTURE":
+            query = query.filter(BillDB.installment_number >= db_bill.installment_number)
+        
+        group_bills = query.all()
+        for b in group_bills:
+            b.creditor = update.creditor
+            b.entity = update.entity
+            b.installment_amount = update.installment_amount
+            b.card_id = update.card_id
+            
+            # Se for a parcela exata que o usuário editou, atualizamos a data também.
+            if b.id == db_bill.id:
+                b.due_date = update.due_date
+
+    db.commit()
+    db.close()
+    return {"success": True}
+
+@app.delete("/api/bills/{id}")
+def delete_bill(id: int, mode: str = Query("SINGLE")):
+    db = SessionLocal()
+    db_bill = db.query(BillDB).filter(BillDB.id == id).first()
+    if not db_bill:
+        db.close()
+        raise HTTPException(status_code=404)
+
+    if mode == "SINGLE" or not db_bill.group_id:
+        db.delete(db_bill)
+    else:
+        query = db.query(BillDB).filter(BillDB.group_id == db_bill.group_id)
+        if mode == "FUTURE":
+            query = query.filter(BillDB.installment_number >= db_bill.installment_number)
+        query.delete()
+
+    db.commit()
+    db.close()
+    return {"success": True}
