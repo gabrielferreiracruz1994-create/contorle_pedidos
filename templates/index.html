@@ -204,9 +204,11 @@
               <th class="p-2.5">Descrição</th>
               <th class="p-2.5 text-right">Entrada</th>
               <th class="p-2.5 text-right">Saída</th>
+              <th class="p-2.5 text-right">Saldo Caixa Após Dia</th>
             </tr>
           </thead>
           <tbody id="tabela-cronograma-fluxo" class="divide-y divide-slate-100"></tbody>
+          <tfoot id="tfoot-cronograma-fluxo" class="bg-slate-100 border-t-2 border-slate-300 text-xs font-bold text-slate-800"></tfoot>
         </table>
       </div>
     </section>
@@ -923,8 +925,11 @@
       const mesAno = document.getElementById('filtro-mes-fluxo').value;
       const perfilSel = document.getElementById('filtro-perfil-fluxo')?.value || 'ALL';
       const tbody = document.getElementById('tabela-cronograma-fluxo');
-      if (!tbody) return;
+      const tfoot = document.getElementById('tfoot-cronograma-fluxo');
+      if (!tbody || !tfoot) return;
+      
       tbody.innerHTML = '';
+      tfoot.innerHTML = '';
 
       if(!mesAno) return;
       const [anoAlvo, mesAlvo] = mesAno.split('-').map(Number);
@@ -965,14 +970,12 @@
             lancamentos.push({ data: dataExibicao, origem: 'Pedido Cliente', descricao: `⚠️ Inadimplente (${p.entity}): ${p.client}`, entrada: 0, saida: 0 });
           } else {
             lancamentos.push({ data: dataExibicao, origem: 'Pedido Cliente', descricao: `Recebimento ${p.is_recurrent ? '(Contrato Recorrente)' : ''} (${p.entity}): ${p.client}`, entrada: valorAEntrar, saida: 0 });
-            saldo += valorAEntrar;
           }
         }
 
         const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
         if (faltaPagarForn > 0 && p.supplier_due_date && p.supplier_due_date.startsWith(mesAno)) {
           lancamentos.push({ data: p.supplier_due_date, origem: 'Fornecedor', descricao: `Pagamento (${p.entity}): ${p.supplier || 'Terceiro'} (Ref. ${p.client})`, entrada: 0, saida: faltaPagarForn });
-          saldo -= faltaPagarForn;
         }
       });
 
@@ -987,7 +990,6 @@
             faturasCartao[b.card_id] += b.installment_amount;
           } else {
             lancamentos.push({ data: b.due_date, origem: `Despesa (${b.entity})`, descricao: `${b.creditor} ${b.is_recurrent ? '(Mensal)' : '('+b.installment_number+'/'+b.total_installments+')'}`, entrada: 0, saida: b.installment_amount || 0 });
-            saldo -= (b.installment_amount || 0);
           }
         }
       });
@@ -1000,30 +1002,57 @@
         const nomeFatura = c ? `${c.name} (${c.entity})` : 'Cartão Desconhecido';
         
         lancamentos.push({ data: dataVencimento, origem: 'Cartão de Crédito', descricao: `Fatura Consolidada: ${nomeFatura}`, entrada: 0, saida: faturasCartao[cardId] });
-        saldo -= faturasCartao[cardId];
       });
 
       lancamentos.sort((a,b) => a.data.localeCompare(b.data));
 
+      let totalEntradasMes = 0;
+      let totalSaidasMes = 0;
+
       if (lancamentos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>`;
       } else {
         lancamentos.forEach(l => {
+          totalEntradasMes += l.entrada;
+          totalSaidasMes += l.saida;
+          saldo += (l.entrada - l.saida);
+
           const isFatura = l.origem === 'Cartão de Crédito';
           const isInadimplente = l.descricao.includes('Inadimplente');
+          const isFuro = saldo < 0;
+
           const tr = document.createElement('tr');
-          tr.className = isFatura ? 'bg-purple-50/50' : (isInadimplente ? 'bg-rose-50/70' : '');
+          
+          // Destaque visual forte em vermelho se o saldo furou (ficou negativo) neste dia
+          if (isFuro) {
+            tr.className = 'bg-rose-100 border-l-4 border-rose-600 font-semibold text-rose-950';
+          } else {
+            tr.className = isFatura ? 'bg-purple-50/50' : (isInadimplente ? 'bg-rose-50/70' : '');
+          }
           
           tr.innerHTML = `
-            <td class="p-2.5 font-bold text-slate-700">${l.data}</td>
+            <td class="p-2.5 font-bold">${l.data}</td>
             <td class="p-2.5 text-xs font-semibold ${isFatura ? 'text-purple-600' : 'text-slate-500'}">${isFatura ? '<i class="fa-solid fa-credit-card"></i> ' : ''}${l.origem}</td>
-            <td class="p-2.5 font-medium ${isInadimplente ? 'text-rose-700 font-bold' : ''}">${l.descricao}</td>
+            <td class="p-2.5 font-medium">${l.descricao}</td>
             <td class="p-2.5 text-right font-bold text-emerald-600">${l.entrada > 0 ? 'R$ ' + l.entrada.toFixed(2) : '-'}</td>
             <td class="p-2.5 text-right font-bold text-rose-600">${l.saida > 0 ? 'R$ ' + l.saida.toFixed(2) : '-'}</td>
+            <td class="p-2.5 text-right font-black ${isFuro ? 'text-rose-700' : 'text-slate-800'}">
+              R$ ${saldo.toFixed(2)} ${isFuro ? ' <span class="bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded ml-1 uppercase font-bold animate-pulse">⚠️ FURO NO CAIXA</span>' : ''}
+            </td>
           `;
           tbody.appendChild(tr);
         });
       }
+
+      // Adiciona a linha de totais no rodapé (tfoot)
+      tfoot.innerHTML = `
+        <tr>
+          <td colspan="3" class="p-3 text-right uppercase text-slate-600">Totais do Mês:</td>
+          <td class="p-3 text-right font-black text-emerald-600 text-sm">R$ ${totalEntradasMes.toFixed(2)}</td>
+          <td class="p-3 text-right font-black text-rose-600 text-sm">R$ ${totalSaidasMes.toFixed(2)}</td>
+          <td class="p-3 text-right text-xs text-slate-500 font-semibold">Resultado: R$ ${(totalEntradasMes - totalSaidasMes).toFixed(2)}</td>
+        </tr>
+      `;
 
       const saldoEl = document.getElementById('saldo-projetado-fluxo');
       saldoEl.innerText = `R$ ${saldo.toFixed(2)}`;
@@ -1319,7 +1348,7 @@
       const selectEntity = document.getElementById('card_entity');
       selectEntity.innerHTML = '';
       profiles.forEach(p => selectEntity.innerHTML += `<option value="${p.name}">${p.name}</option>`);
-      document.getElementById('modal-cartao').classList.remove('hidden');
+      document.getElementById('modal-cartao').classList.add('hidden');
     }
 
     function editarCartao(id) {
