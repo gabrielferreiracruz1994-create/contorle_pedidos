@@ -297,14 +297,26 @@
     </div>
   </div>
 
-  <!-- MODAL ADICIONAR CONTA / DÍVIDA -->
+  <!-- MODAL ADICIONAR / EDITAR CONTA -->
   <div id="modal-bill" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
       <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
-        <h3 class="font-bold text-base">Nova Conta / Lançamento</h3>
+        <h3 id="modal-bill-titulo" class="font-bold text-base">Nova Conta / Lançamento</h3>
         <button onclick="fecharModalBill()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <form onsubmit="salvarBill(event)" class="p-6 space-y-3 text-sm">
+        <input type="hidden" id="bill_id" value="">
+        
+        <!-- OPÇÃO DE APLICAÇÃO AO EDITAR PARCELA -->
+        <div id="box-edit-mode" class="hidden bg-amber-50 p-3 border border-amber-200 rounded-lg text-xs space-y-1">
+          <label class="block font-bold text-amber-900">Aplicar alterações em:</label>
+          <div class="space-y-1 text-slate-700">
+            <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="edit_mode" value="SINGLE" checked> Somente esta parcela</label>
+            <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="edit_mode" value="FUTURE"> Esta e as próximas parcelas</label>
+            <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="edit_mode" value="ALL"> Todas as parcelas da compra</label>
+          </div>
+        </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Credor / Descrição *</label>
           <input type="text" id="bill_creditor" required placeholder="Ex: Mercado, Fornecedor X, Sistema" class="w-full p-2 border rounded">
@@ -322,7 +334,7 @@
           </div>
         </div>
 
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center space-x-3 mt-2">
+        <div id="box-recurrent-option" class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center space-x-3 mt-2">
           <input type="checkbox" id="bill_is_recurrent" onchange="toggleRecurrent()" class="w-4 h-4 text-emerald-600 rounded border-gray-300">
           <div>
             <label for="bill_is_recurrent" class="text-xs font-bold text-amber-900 cursor-pointer">Despesa Mensal Recorrente</label>
@@ -347,7 +359,7 @@
             <input type="number" step="0.01" id="bill_total_amount" readonly class="w-full p-2 border rounded bg-slate-100 font-medium">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">1º Vencimento *</label>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Vencimento *</label>
             <input type="date" id="bill_due_date" required class="w-full p-2 border rounded">
           </div>
         </div>
@@ -357,6 +369,33 @@
           <button type="submit" id="btn-save-bill" class="px-4 py-2 bg-rose-600 text-white rounded text-xs font-semibold">Salvar Conta</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE EXCLUSÃO DE PARCELAS -->
+  <div id="modal-delete-bill" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 space-y-4">
+      <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Excluir Parcela</h3>
+      <p class="text-xs text-slate-600 leading-relaxed">Esta conta faz parte de um parcelamento. Como deseja prosseguir com a exclusão?</p>
+      
+      <div class="space-y-2 pt-2">
+        <button onclick="confirmarExclusaoBill('SINGLE')" class="w-full p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold text-left flex items-center justify-between">
+          <span>Excluir SOMENTE esta parcela</span>
+          <i class="fa-solid fa-chevron-right text-slate-400"></i>
+        </button>
+        <button onclick="confirmarExclusaoBill('FUTURE')" class="w-full p-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-lg text-xs font-bold text-left flex items-center justify-between">
+          <span>Excluir ESTA E AS PRÓXIMAS parcelas</span>
+          <i class="fa-solid fa-chevron-right text-amber-400"></i>
+        </button>
+        <button onclick="confirmarExclusaoBill('ALL')" class="w-full p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-900 rounded-lg text-xs font-bold text-left flex items-center justify-between">
+          <span>Excluir TODAS as parcelas do grupo</span>
+          <i class="fa-solid fa-chevron-right text-rose-400"></i>
+        </button>
+      </div>
+
+      <div class="pt-2 text-right">
+        <button onclick="fecharModalDeleteBill()" class="text-xs text-slate-500 font-semibold px-3 py-1">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -423,6 +462,7 @@
     let cards = [];
     let saldoInicial = 0.0;
     let deferredPrompt;
+    let billToDeleteId = null;
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -662,7 +702,6 @@
         else totalAPagar += (b.installment_amount || 0);
       });
 
-      // Consolidação de Faturas de Cartão por Cartão no mês selecionado
       let faturasConsolidadas = [];
 
       cards.forEach(c => {
@@ -701,7 +740,6 @@
         return;
       }
 
-      // 1. Renderiza Faturas Consolidadas de Cartão
       faturasConsolidadas.forEach(f => {
         const trFatura = document.createElement('tr');
         trFatura.className = 'bg-purple-50/60 font-semibold';
@@ -725,7 +763,6 @@
         `;
         tbody.appendChild(trFatura);
 
-        // Detalhes sanfona expandível das compras do cartão
         const trDetalhes = document.createElement('tr');
         trDetalhes.id = `detalhe-cartao-${f.cartao.id}`;
         trDetalhes.className = 'hidden bg-slate-50 border-b';
@@ -750,8 +787,9 @@
               <td class="py-1.5 font-medium text-slate-700">${item.creditor}</td>
               <td class="py-1.5 text-slate-500">${item.is_recurrent ? 'Mensal' : `${item.installment_number}/${item.total_installments}`}</td>
               <td class="py-1.5 text-right font-bold text-slate-800">R$ ${item.installment_amount.toFixed(2)}</td>
-              <td class="py-1.5 text-center">
-                <button onclick="deletarBill(${item.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir Item"><i class="fa-solid fa-trash"></i></button>
+              <td class="py-1.5 text-center flex justify-center items-center gap-2">
+                <button onclick="editarBill(${item.id})" class="text-blue-600 hover:text-blue-800 p-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="deletarBill(${item.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
               </td>
             </tr>`;
         });
@@ -761,7 +799,6 @@
         tbody.appendChild(trDetalhes);
       });
 
-      // 2. Renderiza Contas e Despesas Diretas (Sem Cartão)
       contasDiretas.forEach(b => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -775,8 +812,9 @@
               ${b.is_paid ? 'Pago' : 'Pendente'}
             </button>
           </td>
-          <td class="p-3 text-center">
-            <button onclick="deletarBill(${b.id})" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>
+          <td class="p-3 text-center flex justify-center items-center gap-2">
+            <button onclick="editarBill(${b.id})" class="text-blue-600 hover:text-blue-800 p-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button onclick="deletarBill(${b.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -986,6 +1024,17 @@
     }
 
     function abrirModalBill() {
+      document.getElementById('modal-bill-titulo').innerText = "Nova Conta / Lançamento";
+      document.getElementById('bill_id').value = "";
+      document.getElementById('bill_creditor').value = "";
+      document.getElementById('bill_installment_amount').value = "";
+      document.getElementById('bill_total_amount').value = "";
+      document.getElementById('bill_due_date').value = "";
+
+      document.getElementById('box-edit-mode').classList.add('hidden');
+      document.getElementById('box-recurrent-option').classList.remove('hidden');
+      document.getElementById('box_installments').classList.remove('hidden');
+
       const selectEntity = document.getElementById('bill_entity');
       const selectCard = document.getElementById('bill_card_id');
 
@@ -997,12 +1046,34 @@
       cards.forEach(c => selectCard.innerHTML += `<option value="${c.id}">${c.name} (${c.entity})</option>`);
 
       document.getElementById('bill_is_recurrent').checked = false;
-      document.getElementById('bill_installment_amount').value = '';
-      document.getElementById('bill_total_amount').value = '';
       toggleRecurrent();
 
       document.getElementById('modal-bill').classList.remove('hidden');
     }
+
+    function editarBill(id) {
+      const b = bills.find(x => x.id === id);
+      if(!b) return;
+
+      abrirModalBill();
+      document.getElementById('modal-bill-titulo').innerText = `Editar Parcela (${b.installment_number}/${b.total_installments})`;
+      document.getElementById('bill_id').value = b.id;
+      document.getElementById('bill_creditor').value = b.creditor || "";
+      document.getElementById('bill_entity').value = b.entity || "";
+      document.getElementById('bill_card_id').value = b.card_id || "";
+      document.getElementById('bill_installment_amount').value = (b.installment_amount || 0).toFixed(2);
+      document.getElementById('bill_due_date').value = b.due_date || "";
+
+      document.getElementById('box-recurrent-option').classList.add('hidden');
+      document.getElementById('box_installments').classList.add('hidden');
+
+      if(b.group_id && b.total_installments > 1) {
+        document.getElementById('box-edit-mode').classList.remove('hidden');
+      } else {
+        document.getElementById('box-edit-mode').classList.add('hidden');
+      }
+    }
+
     function fecharModalBill() { document.getElementById('modal-bill').classList.add('hidden'); }
 
     async function salvarBill(e) {
@@ -1010,39 +1081,58 @@
       const btn = document.getElementById('btn-save-bill');
       btn.disabled = true; btn.innerText = "Salvando...";
 
+      const id = document.getElementById('bill_id').value;
       const creditor = document.getElementById('bill_creditor').value;
       const entity = document.getElementById('bill_entity').value;
       const cardId = document.getElementById('bill_card_id').value;
-      const isRecurrent = document.getElementById('bill_is_recurrent').checked;
-      
       const installmentAmount = parseFloat(document.getElementById('bill_installment_amount').value) || 0;
-      const totalInstallments = isRecurrent ? 12 : parseInt(document.getElementById('bill_total_installments').value);
-      const totalAmountInput = installmentAmount * totalInstallments;
-
       const dueDateStr = document.getElementById('bill_due_date').value;
-      const [ano, mes, dia] = dueDateStr.split('-').map(Number);
 
       try {
-        for(let i = 1; i <= totalInstallments; i++) {
-          const d = new Date(ano, mes - 1 + (i - 1), dia);
-          const dataFormatada = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-
-          await fetch('/api/bills', {
-            method: 'POST',
+        if(id) {
+          const editMode = document.querySelector('input[name="edit_mode"]:checked')?.value || 'SINGLE';
+          await fetch(`/api/bills/${id}`, {
+            method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
+              mode: editMode,
               creditor,
               entity,
-              total_amount: totalAmountInput,
-              installment_number: i,
-              total_installments: totalInstallments,
               installment_amount: installmentAmount,
-              due_date: dataFormatada,
-              is_recurrent: isRecurrent,
-              created_by_user: entity,
+              due_date: dueDateStr,
               card_id: cardId ? parseInt(cardId) : null
             })
           });
+        } else {
+          const isRecurrent = document.getElementById('bill_is_recurrent').checked;
+          const totalInstallments = isRecurrent ? 12 : parseInt(document.getElementById('bill_total_installments').value);
+          const totalAmountInput = installmentAmount * totalInstallments;
+          const groupId = totalInstallments > 1 ? (Math.random().toString(36).substring(2, 9)) : null;
+
+          const [ano, mes, dia] = dueDateStr.split('-').map(Number);
+
+          for(let i = 1; i <= totalInstallments; i++) {
+            const d = new Date(ano, mes - 1 + (i - 1), dia);
+            const dataFormatada = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+            await fetch('/api/bills', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                group_id: groupId,
+                creditor,
+                entity,
+                total_amount: totalAmountInput,
+                installment_number: i,
+                total_installments: totalInstallments,
+                installment_amount: installmentAmount,
+                due_date: dataFormatada,
+                is_recurrent: isRecurrent,
+                created_by_user: entity,
+                card_id: cardId ? parseInt(cardId) : null
+              })
+            });
+          }
         }
       } finally {
         btn.disabled = false; btn.innerText = "Salvar Conta";
@@ -1055,11 +1145,31 @@
       carregarDados();
     }
 
-    async function deletarBill(id) {
-      if(confirm('Excluir esta conta?')) {
-        await fetch(`/api/bills/${id}`, { method: 'DELETE' });
-        carregarDados();
+    function deletarBill(id) {
+      const b = bills.find(x => x.id === id);
+      if(!b) return;
+
+      billToDeleteId = id;
+
+      if(b.group_id && b.total_installments > 1) {
+        document.getElementById('modal-delete-bill').classList.remove('hidden');
+      } else {
+        if(confirm('Tem certeza que deseja excluir este lançamento?')) {
+          confirmarExclusaoBill('SINGLE');
+        }
       }
+    }
+
+    function fecharModalDeleteBill() {
+      document.getElementById('modal-delete-bill').classList.add('hidden');
+      billToDeleteId = null;
+    }
+
+    async function confirmarExclusaoBill(mode) {
+      if(!billToDeleteId) return;
+      await fetch(`/api/bills/${billToDeleteId}?mode=${mode}`, { method: 'DELETE' });
+      fecharModalDeleteBill();
+      carregarDados();
     }
 
     function abrirModalPerfil() {
