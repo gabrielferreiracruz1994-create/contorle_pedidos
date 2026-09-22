@@ -8,10 +8,25 @@ from typing import List, Optional
 import os
 
 # ==========================================
-# CONFIGURAÇÃO DO BANCO DE DADOS (SQLite)
+# CONFIGURAÇÃO DO BANCO DE DADOS (SUPABASE / POSTGRESQL)
 # ==========================================
-DATABASE_URL = "sqlite:///./erp_unificado.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Coloque a sua URL do Supabase abaixo, mantendo as aspas.
+# Exemplo: "postgresql://postgres:SuaSenha@db.abcd123.supabase.co:5432/postgres"
+MINHA_URL_SUPABASE = "postgresql://postgres:[SUA_SENHA]@db.[SEU_PROJETO].supabase.co:5432/postgres"
+
+# Pega a URL do ambiente (se existir na nuvem) ou usa a do Supabase informada acima
+DATABASE_URL = os.getenv("DATABASE_URL", MINHA_URL_SUPABASE)
+
+# Corrige o prefixo (o SQLAlchemy mais novo exige postgresql:// ao invés de postgres://)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Se por acaso for SQLite, precisa de argumentos especiais, se for Postgres, não.
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -134,7 +149,6 @@ class BalanceSchema(BaseModel):
 # ==========================================
 app = FastAPI(title="ERP Unificado API")
 
-# Dependência do Banco de Dados
 def get_db():
     db = SessionLocal()
     try:
@@ -142,7 +156,7 @@ def get_db():
     finally:
         db.close()
 
-# Rota Principal - Serve o HTML
+# Servir a página principal
 @app.get("/", response_class=HTMLResponse)
 def read_root():
     template_path = os.path.join(os.path.dirname(__file__), "templates", "index.html")
@@ -150,7 +164,7 @@ def read_root():
         return file.read()
 
 # ==========================================
-# ROTAS: CONFIGURAÇÕES (Saldo Inicial)
+# ROTAS: CONFIGURAÇÕES E DADOS
 # ==========================================
 @app.get("/api/settings/balance")
 def get_balance():
@@ -172,9 +186,6 @@ def set_balance(data: BalanceSchema):
     db.close()
     return {"success": True}
 
-# ==========================================
-# ROTAS: PERFIS
-# ==========================================
 @app.get("/api/profiles")
 def get_profiles():
     db = SessionLocal()
@@ -199,9 +210,6 @@ def delete_profile(id: int):
     db.close()
     return {"success": True}
 
-# ==========================================
-# ROTAS: CARTÕES
-# ==========================================
 @app.get("/api/cards")
 def get_cards():
     db = SessionLocal()
@@ -224,7 +232,7 @@ def update_card(id: int, card: CardSchema):
     db_card = db.query(CardDB).filter(CardDB.id == id).first()
     if not db_card:
         db.close()
-        raise HTTPException(status_code=404, detail="Cartão não encontrado")
+        raise HTTPException(status_code=404)
     for key, value in card.dict().items():
         setattr(db_card, key, value)
     db.commit()
@@ -235,7 +243,6 @@ def update_card(id: int, card: CardSchema):
 def delete_card(id: int):
     db = SessionLocal()
     db.query(CardDB).filter(CardDB.id == id).delete()
-    # Desvincular faturas
     bills = db.query(BillDB).filter(BillDB.card_id == id).all()
     for b in bills:
         b.card_id = None
@@ -243,9 +250,6 @@ def delete_card(id: int):
     db.close()
     return {"success": True}
 
-# ==========================================
-# ROTAS: PEDIDOS
-# ==========================================
 @app.get("/api/orders")
 def get_orders():
     db = SessionLocal()
@@ -295,9 +299,6 @@ def delete_order(id: int):
     db.close()
     return {"success": True}
 
-# ==========================================
-# ROTAS: FINANCEIRO E CONTAS (BILLS)
-# ==========================================
 @app.get("/api/bills")
 def get_bills():
     db = SessionLocal()
@@ -334,7 +335,6 @@ def update_bill(id: int, update: BillUpdateSchema):
         db.close()
         raise HTTPException(status_code=404)
 
-    # Lógica para alterar parcelas baseado no "mode" selecionado (SINGLE, FUTURE, ALL)
     if update.mode == "SINGLE" or not db_bill.group_id:
         db_bill.creditor = update.creditor
         db_bill.entity = update.entity
@@ -352,11 +352,8 @@ def update_bill(id: int, update: BillUpdateSchema):
             b.entity = update.entity
             b.installment_amount = update.installment_amount
             b.card_id = update.card_id
-            
-            # Se for a parcela exata que o usuário editou, atualizamos a data também.
             if b.id == db_bill.id:
                 b.due_date = update.due_date
-
     db.commit()
     db.close()
     return {"success": True}
