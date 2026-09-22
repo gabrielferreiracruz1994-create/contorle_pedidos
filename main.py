@@ -237,17 +237,24 @@ def update_bill(bill_id: int, data: BillUpdateSchema, db: Session = Depends(get_
     if not target:
         raise HTTPException(status_code=404, detail="Conta não encontrada")
 
-    if data.mode == "SINGLE" or not target.group_id:
+    query = db.query(BillModel)
+    if target.group_id:
+        query = query.filter(BillModel.group_id == target.group_id)
+    else:
+        query = query.filter(
+            BillModel.creditor == target.creditor,
+            BillModel.total_installments == target.total_installments,
+            BillModel.entity == target.entity
+        )
+
+    if data.mode == "SINGLE":
         target.creditor = data.creditor
         target.entity = data.entity
         target.installment_amount = data.installment_amount
         target.due_date = data.due_date
         target.card_id = data.card_id
     elif data.mode == "FUTURE":
-        targets = db.query(BillModel).filter(
-            BillModel.group_id == target.group_id,
-            BillModel.installment_number >= target.installment_number
-        ).all()
+        targets = query.filter(BillModel.installment_number >= target.installment_number).all()
         for b in targets:
             b.creditor = data.creditor
             b.entity = data.entity
@@ -255,7 +262,7 @@ def update_bill(bill_id: int, data: BillUpdateSchema, db: Session = Depends(get_
             b.card_id = data.card_id
         target.due_date = data.due_date
     elif data.mode == "ALL":
-        targets = db.query(BillModel).filter(BillModel.group_id == target.group_id).all()
+        targets = query.all()
         for b in targets:
             b.creditor = data.creditor
             b.entity = data.entity
@@ -281,15 +288,22 @@ def delete_bill(bill_id: int, mode: str = "SINGLE", db: Session = Depends(get_db
     if not target:
         raise HTTPException(status_code=404, detail="Não encontrado")
 
-    if mode == "SINGLE" or not target.group_id:
+    query = db.query(BillModel)
+    if target.group_id:
+        query = query.filter(BillModel.group_id == target.group_id)
+    else:
+        query = query.filter(
+            BillModel.creditor == target.creditor,
+            BillModel.total_installments == target.total_installments,
+            BillModel.entity == target.entity
+        )
+
+    if mode == "SINGLE":
         db.delete(target)
     elif mode == "FUTURE":
-        db.query(BillModel).filter(
-            BillModel.group_id == target.group_id,
-            BillModel.installment_number >= target.installment_number
-        ).delete(synchronize_session=False)
+        query.filter(BillModel.installment_number >= target.installment_number).delete(synchronize_session=False)
     elif mode == "ALL":
-        db.query(BillModel).filter(BillModel.group_id == target.group_id).delete(synchronize_session=False)
+        query.delete(synchronize_session=False)
 
     db.commit()
     return {"message": "Excluído com sucesso"}
