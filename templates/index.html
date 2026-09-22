@@ -307,7 +307,6 @@
       <form onsubmit="salvarBill(event)" class="p-6 space-y-3 text-sm">
         <input type="hidden" id="bill_id" value="">
         
-        <!-- OPÇÃO DE APLICAÇÃO AO EDITAR PARCELA -->
         <div id="box-edit-mode" class="hidden bg-amber-50 p-3 border border-amber-200 rounded-lg text-xs space-y-1">
           <label class="block font-bold text-amber-900">Aplicar alterações em:</label>
           <div class="space-y-1 text-slate-700">
@@ -1067,7 +1066,7 @@
       document.getElementById('box-recurrent-option').classList.add('hidden');
       document.getElementById('box_installments').classList.add('hidden');
 
-      if(b.group_id && b.total_installments > 1) {
+      if(b.total_installments > 1) {
         document.getElementById('box-edit-mode').classList.remove('hidden');
       } else {
         document.getElementById('box-edit-mode').classList.add('hidden');
@@ -1151,7 +1150,7 @@
 
       billToDeleteId = id;
 
-      if(b.group_id && b.total_installments > 1) {
+      if(b.total_installments > 1) {
         document.getElementById('modal-delete-bill').classList.remove('hidden');
       } else {
         if(confirm('Tem certeza que deseja excluir este lançamento?')) {
