@@ -77,6 +77,7 @@ class OrderModel(Base):
     sale_value = Column(Float, default=0.0)
     paid_by_client = Column(Float, default=0.0)
     paid_to_supplier = Column(Float, default=0.0)
+    is_recurrent = Column(Boolean, default=False)
 
 class SettingsModel(Base):
     __tablename__ = "settings"
@@ -133,7 +134,7 @@ class BillCreate(BaseModel):
     card_id: Optional[int] = None
 
 class BillUpdateSchema(BaseModel):
-    mode: str  # 'SINGLE', 'FUTURE', 'ALL'
+    mode: str
     creditor: str
     entity: str
     installment_amount: float
@@ -157,6 +158,7 @@ class OrderSchema(BaseModel):
     sale_value: float
     paid_by_client: float
     paid_to_supplier: float
+    is_recurrent: bool = False
 
 class OrderStatusUpdate(BaseModel):
     status_production: str
