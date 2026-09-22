@@ -3,7 +3,6 @@ import sys
 from typing import Optional
 from dotenv import load_dotenv
 
-# Carrega as variáveis do arquivo .env (caso exista localmente)
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Depends
@@ -18,10 +17,8 @@ def get_resource_path(relative_path: str) -> str:
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
-# Pega a URL do Supabase do Render ou do arquivo .env local
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./financeiro.db")
 
-# Ajuste automático de compatibilidade para URLs do PostgreSQL no Render/Supabase
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
@@ -195,6 +192,16 @@ def create_card(card: CardCreate, db: Session = Depends(get_db)):
     db.add(db_card); db.commit(); db.refresh(db_card)
     return db_card
 
+@app.put("/api/cards/{card_id}")
+def update_card(card_id: int, card_data: CardCreate, db: Session = Depends(get_db)):
+    card = db.query(CardModel).filter(CardModel.id == card_id).first()
+    if not card:
+        raise HTTPException(status_code=404, detail="Cartão não encontrado")
+    for key, value in card_data.dict().items():
+        setattr(card, key, value)
+    db.commit()
+    return {"message": "Cartão atualizado"}
+
 @app.delete("/api/cards/{card_id}")
 def delete_card(card_id: int, db: Session = Depends(get_db)):
     card = db.query(CardModel).filter(CardModel.id == card_id).first()
@@ -240,6 +247,16 @@ def create_order(order: OrderSchema, db: Session = Depends(get_db)):
     db_order = OrderModel(**order.dict())
     db.add(db_order); db.commit(); db.refresh(db_order)
     return db_order
+
+@app.put("/api/orders/{order_id}")
+def update_order(order_id: int, order_data: OrderSchema, db: Session = Depends(get_db)):
+    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    for key, value in order_data.dict().items():
+        setattr(order, key, value)
+    db.commit()
+    return {"message": "Pedido atualizado com sucesso"}
 
 @app.put("/api/orders/{order_id}/status")
 def update_order_status(order_id: int, status_data: OrderStatusUpdate, db: Session = Depends(get_db)):
