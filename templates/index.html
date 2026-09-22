@@ -635,6 +635,11 @@
       });
     }
 
+    function toggleDetalhesCartao(cardId) {
+      const el = document.getElementById(`detalhe-cartao-${cardId}`);
+      if(el) el.classList.toggle('hidden');
+    }
+
     function renderizarBills() {
       const tbody = document.getElementById('tabela-bills');
       if (!tbody) return;
@@ -643,7 +648,7 @@
       const mesSel = document.getElementById('filtro-mes-fin').value;
       const perfilSel = document.getElementById('filtro-perfil-fin')?.value || 'ALL';
 
-      const contasNormais = bills.filter(b => {
+      const contasDiretas = bills.filter(b => {
         const bateuMes = !b.card_id && b.due_date && b.due_date.startsWith(mesSel);
         const bateuPerfil = (perfilSel === 'ALL' || b.entity === perfilSel);
         return bateuMes && bateuPerfil;
@@ -652,11 +657,36 @@
       let totalAPagar = 0;
       let totalPago = 0;
 
-      contasNormais.forEach(b => {
-        if(b.is_paid) {
-          totalPago += (b.installment_amount || 0);
-        } else {
-          totalAPagar += (b.installment_amount || 0);
+      contasDiretas.forEach(b => {
+        if(b.is_paid) totalPago += (b.installment_amount || 0);
+        else totalAPagar += (b.installment_amount || 0);
+      });
+
+      // Consolidação de Faturas de Cartão por Cartão no mês selecionado
+      let faturasConsolidadas = [];
+
+      cards.forEach(c => {
+        if (perfilSel !== 'ALL' && c.entity !== perfilSel) return;
+
+        const itensDoCartaoNoMes = bills.filter(b => {
+          return b.card_id === c.id && b.due_date && b.due_date.startsWith(mesSel);
+        });
+
+        if (itensDoCartaoNoMes.length > 0) {
+          const valorTotalFatura = itensDoCartaoNoMes.reduce((acc, item) => acc + (item.installment_amount || 0), 0);
+          const todasPagas = itensDoCartaoNoMes.every(item => item.is_paid);
+          const dataVencimento = `${mesSel}-${String(c.due_day).padStart(2, '0')}`;
+
+          if (todasPagas) totalPago += valorTotalFatura;
+          else totalAPagar += valorTotalFatura;
+
+          faturasConsolidadas.push({
+            cartao: c,
+            total: valorTotalFatura,
+            is_paid: todasPagas,
+            due_date: dataVencimento,
+            itens: itensDoCartaoNoMes
+          });
         }
       });
 
@@ -666,12 +696,73 @@
       document.getElementById('resumo-pago').innerText = `R$ ${totalPago.toFixed(2)}`;
       document.getElementById('resumo-total-mes').innerText = `R$ ${totalMes.toFixed(2)}`;
 
-      if (contasNormais.length === 0) {
+      if (contasDiretas.length === 0 && faturasConsolidadas.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhuma conta/despesa para os filtros selecionados.</td></tr>`;
         return;
       }
-      
-      contasNormais.forEach(b => {
+
+      // 1. Renderiza Faturas Consolidadas de Cartão
+      faturasConsolidadas.forEach(f => {
+        const trFatura = document.createElement('tr');
+        trFatura.className = 'bg-purple-50/60 font-semibold';
+        trFatura.innerHTML = `
+          <td class="p-3 text-purple-900 font-bold">
+            <i class="fa-solid fa-credit-card text-purple-600 mr-2"></i>FATURA CARTÃO: ${f.cartao.name.toUpperCase()}
+            <button onclick="toggleDetalhesCartao(${f.cartao.id})" class="ml-2 text-xs text-purple-700 underline font-normal focus:outline-none">
+              (Ver/Ocultar ${f.itens.length} compras)
+            </button>
+          </td>
+          <td class="p-3 text-xs font-semibold text-purple-800">${f.cartao.entity}</td>
+          <td class="p-3 text-xs text-purple-700">Consolidado</td>
+          <td class="p-3 text-xs font-bold text-purple-900">${f.due_date}</td>
+          <td class="p-3 text-right font-black text-purple-900">R$ ${f.total.toFixed(2)}</td>
+          <td class="p-3 text-center">
+            <span class="text-xs px-2 py-1 rounded font-bold ${f.is_paid ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+              ${f.is_paid ? 'Quitada' : 'Pendente'}
+            </span>
+          </td>
+          <td class="p-3 text-center text-xs text-slate-400">-</td>
+        `;
+        tbody.appendChild(trFatura);
+
+        // Detalhes sanfona expandível das compras do cartão
+        const trDetalhes = document.createElement('tr');
+        trDetalhes.id = `detalhe-cartao-${f.cartao.id}`;
+        trDetalhes.className = 'hidden bg-slate-50 border-b';
+        
+        let htmlItens = `<td colspan="7" class="p-3 pl-8">
+          <div class="bg-white p-3 rounded-lg border border-purple-100 space-y-2">
+            <div class="text-xs font-bold text-purple-900 uppercase border-b pb-1">Lançamentos Individuais no Cartão ${f.cartao.name}</div>
+            <table class="w-full text-xs text-left">
+              <thead>
+                <tr class="text-slate-400 border-b">
+                  <th class="py-1">Item / Credor</th>
+                  <th class="py-1">Parcela</th>
+                  <th class="py-1 text-right">Valor</th>
+                  <th class="py-1 text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">`;
+
+        f.itens.forEach(item => {
+          htmlItens += `
+            <tr>
+              <td class="py-1.5 font-medium text-slate-700">${item.creditor}</td>
+              <td class="py-1.5 text-slate-500">${item.is_recurrent ? 'Mensal' : `${item.installment_number}/${item.total_installments}`}</td>
+              <td class="py-1.5 text-right font-bold text-slate-800">R$ ${item.installment_amount.toFixed(2)}</td>
+              <td class="py-1.5 text-center">
+                <button onclick="deletarBill(${item.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir Item"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            </tr>`;
+        });
+
+        htmlItens += `</tbody></table></div></td>`;
+        trDetalhes.innerHTML = htmlItens;
+        tbody.appendChild(trDetalhes);
+      });
+
+      // 2. Renderiza Contas e Despesas Diretas (Sem Cartão)
+      contasDiretas.forEach(b => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="p-3 font-bold text-slate-800">${b.creditor} <span class="text-[10px] text-amber-600 ml-1 ${b.is_recurrent ? '' : 'hidden'}"><i class="fa-solid fa-rotate"></i> Recorrente</span></td>
