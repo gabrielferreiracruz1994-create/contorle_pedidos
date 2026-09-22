@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 from typing import Optional
 from dotenv import load_dotenv
 
@@ -119,6 +120,7 @@ class CardCreate(BaseModel):
     due_day: int
 
 class BillCreate(BaseModel):
+    group_id: Optional[str] = None
     creditor: str
     entity: str
     total_amount: float
@@ -128,6 +130,14 @@ class BillCreate(BaseModel):
     due_date: str
     is_recurrent: bool
     created_by_user: str
+    card_id: Optional[int] = None
+
+class BillUpdateSchema(BaseModel):
+    mode: str  # 'SINGLE', 'FUTURE', 'ALL'
+    creditor: str
+    entity: str
+    installment_amount: float
+    due_date: str
     card_id: Optional[int] = None
 
 class BillStatusUpdate(BaseModel):
@@ -221,6 +231,41 @@ def create_bill(bill: BillCreate, db: Session = Depends(get_db)):
     db.add(db_bill); db.commit(); db.refresh(db_bill)
     return db_bill
 
+@app.put("/api/bills/{bill_id}")
+def update_bill(bill_id: int, data: BillUpdateSchema, db: Session = Depends(get_db)):
+    target = db.query(BillModel).filter(BillModel.id == bill_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+
+    if data.mode == "SINGLE" or not target.group_id:
+        target.creditor = data.creditor
+        target.entity = data.entity
+        target.installment_amount = data.installment_amount
+        target.due_date = data.due_date
+        target.card_id = data.card_id
+    elif data.mode == "FUTURE":
+        targets = db.query(BillModel).filter(
+            BillModel.group_id == target.group_id,
+            BillModel.installment_number >= target.installment_number
+        ).all()
+        for b in targets:
+            b.creditor = data.creditor
+            b.entity = data.entity
+            b.installment_amount = data.installment_amount
+            b.card_id = data.card_id
+        target.due_date = data.due_date
+    elif data.mode == "ALL":
+        targets = db.query(BillModel).filter(BillModel.group_id == target.group_id).all()
+        for b in targets:
+            b.creditor = data.creditor
+            b.entity = data.entity
+            b.installment_amount = data.installment_amount
+            b.card_id = data.card_id
+        target.due_date = data.due_date
+
+    db.commit()
+    return {"message": "Lançamento(s) atualizado(s) com sucesso"}
+
 @app.put("/api/bills/{bill_id}/status")
 def update_bill_status(bill_id: int, status_data: BillStatusUpdate, db: Session = Depends(get_db)):
     bill = db.query(BillModel).filter(BillModel.id == bill_id).first()
@@ -231,12 +276,23 @@ def update_bill_status(bill_id: int, status_data: BillStatusUpdate, db: Session 
     raise HTTPException(status_code=404, detail="Dívida não encontrada")
 
 @app.delete("/api/bills/{bill_id}")
-def delete_bill(bill_id: int, db: Session = Depends(get_db)):
-    bill = db.query(BillModel).filter(BillModel.id == bill_id).first()
-    if bill:
-        db.delete(bill); db.commit()
-        return {"message": "Excluído com sucesso"}
-    raise HTTPException(status_code=404, detail="Não encontrado")
+def delete_bill(bill_id: int, mode: str = "SINGLE", db: Session = Depends(get_db)):
+    target = db.query(BillModel).filter(BillModel.id == bill_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Não encontrado")
+
+    if mode == "SINGLE" or not target.group_id:
+        db.delete(target)
+    elif mode == "FUTURE":
+        db.query(BillModel).filter(
+            BillModel.group_id == target.group_id,
+            BillModel.installment_number >= target.installment_number
+        ).delete(synchronize_session=False)
+    elif mode == "ALL":
+        db.query(BillModel).filter(BillModel.group_id == target.group_id).delete(synchronize_session=False)
+
+    db.commit()
+    return {"message": "Excluído com sucesso"}
 
 @app.get("/api/orders")
 def get_orders(db: Session = Depends(get_db)):
