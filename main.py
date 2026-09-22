@@ -3,7 +3,7 @@ import sys
 from typing import Optional
 from dotenv import load_dotenv
 
-# Carrega a variável DATABASE_URL do arquivo .env
+# Carrega as variáveis do arquivo .env (caso exista localmente)
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Depends
@@ -18,8 +18,10 @@ def get_resource_path(relative_path: str) -> str:
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
+# Pega a URL do Supabase do Render ou do arquivo .env local
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./financeiro.db")
 
+# Ajuste automático de compatibilidade para URLs do PostgreSQL no Render/Supabase
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
