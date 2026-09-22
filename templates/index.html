@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ERP Unificado - Pedidos, Financeiro & Caixa</title>
   
-  <!-- Suporte a PWA (Instalação como App no Chrome) -->
+  <!-- Suporte a PWA -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#2563eb">
   <meta name="mobile-web-app-capable" content="yes">
@@ -30,7 +30,6 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <!-- BOTÃO DE INSTALAÇÃO DO PWA -->
         <button id="btn-install-app" onclick="instalarApp()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5">
           <i class="fa-solid fa-download"></i> Baixar App
         </button>
@@ -85,15 +84,51 @@
 
     <!-- ABA 2: FINANCEIRO GERAL -->
     <section id="sec-financeiro" class="hidden space-y-6">
+      
+      <!-- CARTÕES -->
       <div id="box-cartoes" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
 
+      <!-- PAINEL DE TOTAIS E CONTROLE DA ABA FINANCEIRO -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 flex justify-between items-center">
+          <div>
+            <span class="text-[10px] font-bold uppercase text-rose-700">Total a Pagar (Pendente)</span>
+            <div id="resumo-a-pagar" class="text-xl font-black text-rose-700">R$ 0,00</div>
+          </div>
+          <div class="bg-rose-200 text-rose-700 p-2.5 rounded-lg"><i class="fa-solid fa-clock-rotate-left text-lg"></i></div>
+        </div>
+
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex justify-between items-center">
+          <div>
+            <span class="text-[10px] font-bold uppercase text-emerald-700">Total Pago (Quitado)</span>
+            <div id="resumo-pago" class="text-xl font-black text-emerald-700">R$ 0,00</div>
+          </div>
+          <div class="bg-emerald-200 text-emerald-700 p-2.5 rounded-lg"><i class="fa-solid fa-circle-check text-lg"></i></div>
+        </div>
+
+        <div class="bg-slate-800 text-white rounded-xl p-4 flex justify-between items-center shadow-sm">
+          <div>
+            <span class="text-[10px] font-bold uppercase text-slate-400">Total do Mês (Geral)</span>
+            <div id="resumo-total-mes" class="text-xl font-black text-white">R$ 0,00</div>
+          </div>
+          <div class="bg-slate-700 text-blue-400 p-2.5 rounded-lg"><i class="fa-solid fa-calculator text-lg"></i></div>
+        </div>
+      </div>
+
+      <!-- BARRA DE CONTROLES E FILTROS DO FINANCEIRO -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-xl border border-slate-200 gap-4">
         <div>
           <h2 class="text-base font-bold text-slate-800">Contas, Despesas e Faturas</h2>
-          <p class="text-xs text-slate-500">Lançamentos pessoais e empresariais. Selecione o mês para visualizar.</p>
+          <p class="text-xs text-slate-500">Filtrado por mês e perfil selecionado.</p>
         </div>
 
-        <div class="flex items-center gap-3 w-full md:w-auto">
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <!-- FILTRO POR PERFIL DO FINANCEIRO -->
+          <select id="filtro-perfil-fin" onchange="renderizarBills()" class="bg-slate-100 font-bold text-xs p-2 rounded-lg border border-slate-200 focus:outline-none cursor-pointer">
+            <option value="ALL">ALL - TODOS OS PERFIS</option>
+          </select>
+
+          <!-- SELETOR DE MÊS -->
           <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
             <button onclick="navegarMes('filtro-mes-fin', -1); renderizarBills();" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-chevron-left"></i></button>
             <input type="month" id="filtro-mes-fin" onchange="renderizarBills()" class="bg-transparent font-bold text-xs p-1 text-slate-700 focus:outline-none">
@@ -128,7 +163,6 @@
     <section id="sec-fluxo" class="hidden space-y-6">
       <div class="bg-slate-900 text-white rounded-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4 shadow-md">
         <div class="flex flex-wrap items-center gap-4">
-          <!-- SELETOR DE PERFIL -->
           <div class="flex flex-col">
             <label class="text-[10px] font-bold text-slate-400 uppercase mb-1"><i class="fa-solid fa-user-tag text-blue-400 mr-1"></i>Perfil / Titular</label>
             <select id="filtro-perfil-fluxo" onchange="renderizarFluxo()" class="bg-slate-800 text-white font-bold text-xs p-2 rounded border border-slate-700 focus:outline-none cursor-pointer">
@@ -136,7 +170,6 @@
             </select>
           </div>
 
-          <!-- SELETOR DE MÊS -->
           <div class="flex flex-col">
             <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Mês de Análise</label>
             <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
@@ -456,14 +489,23 @@
     }
 
     function atualizarOpcoesFiltroPerfil() {
-      const sel = document.getElementById('filtro-perfil-fluxo');
-      if(!sel) return;
-      const valAtual = sel.value;
-      sel.innerHTML = '<option value="ALL">ALL - TODOS OS PERFIS</option>';
-      profiles.forEach(p => {
-        sel.innerHTML += `<option value="${p.name}">${p.name}</option>`;
-      });
-      sel.value = valAtual || 'ALL';
+      const selFluxo = document.getElementById('filtro-perfil-fluxo');
+      const selFin = document.getElementById('filtro-perfil-fin');
+      
+      const valFluxo = selFluxo ? selFluxo.value : 'ALL';
+      const valFin = selFin ? selFin.value : 'ALL';
+
+      if(selFluxo) {
+        selFluxo.innerHTML = '<option value="ALL">ALL - TODOS OS PERFIS</option>';
+        profiles.forEach(p => selFluxo.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+        selFluxo.value = valFluxo || 'ALL';
+      }
+
+      if(selFin) {
+        selFin.innerHTML = '<option value="ALL">ALL - TODOS OS PERFIS</option>';
+        profiles.forEach(p => selFin.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+        selFin.value = valFin || 'ALL';
+      }
     }
 
     async function salvarSaldoInicial() {
@@ -591,10 +633,36 @@
       tbody.innerHTML = '';
       
       const mesSel = document.getElementById('filtro-mes-fin').value;
-      const contasNormais = bills.filter(b => !b.card_id && b.due_date && b.due_date.startsWith(mesSel));
-      
+      const perfilSel = document.getElementById('filtro-perfil-fin')?.value || 'ALL';
+
+      // FILTRAR CONTAS POR MÊS E PERFIL
+      const contasNormais = bills.filter(b => {
+        const bateuMes = !b.card_id && b.due_date && b.due_date.startsWith(mesSel);
+        const bateuPerfil = (perfilSel === 'ALL' || b.entity === perfilSel);
+        return bateuMes && bateuPerfil;
+      });
+
+      // CÁLCULO DOS RESUMOS (A PAGAR, PAGO, TOTAL DO MÊS)
+      let totalAPagar = 0;
+      let totalPago = 0;
+
+      contasNormais.forEach(b => {
+        if(b.is_paid) {
+          totalPago += (b.installment_amount || 0);
+        } else {
+          totalAPagar += (b.installment_amount || 0);
+        }
+      });
+
+      const totalMes = totalAPagar + totalPago;
+
+      // ATUALIZA CARDS DE RESUMO NA TELA
+      document.getElementById('resumo-a-pagar').innerText = `R$ ${totalAPagar.toFixed(2)}`;
+      document.getElementById('resumo-pago').innerText = `R$ ${totalPago.toFixed(2)}`;
+      document.getElementById('resumo-total-mes').innerText = `R$ ${totalMes.toFixed(2)}`;
+
       if (contasNormais.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhuma conta/despesa para o mês selecionado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhuma conta/despesa para os filtros selecionados.</td></tr>`;
         return;
       }
       
