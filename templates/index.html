@@ -260,7 +260,7 @@
           <input type="checkbox" id="ped_is_recurrent" class="w-4 h-4 text-blue-600 rounded border-gray-300">
           <div>
             <label for="ped_is_recurrent" class="text-xs font-bold text-blue-900 cursor-pointer">Contrato / Recebimento Mensal Recorrente</label>
-            <p class="text-[10px] text-blue-700 leading-tight mt-0.5">Marque para incluir este valor todo mês no seu Fluxo de Caixa automaticamente.</p>
+            <p class="text-[10px] text-blue-700 leading-tight mt-0.5">Marque para incluir este valor todo mês no seu Fluxo de Caixa a partir da data de vencimento.</p>
           </div>
         </div>
 
@@ -834,7 +834,6 @@
       });
     }
 
-    // Função auxiliar para calcular o saldo acumulado de um mês específico
     function calcularSaldoAcumuladoAte(anoAlvo, mesAlvo, perfilSel) {
       let saldoAcumulado = saldoInicial;
       
@@ -869,7 +868,15 @@
           const st = (p.status_production || '').toUpperCase();
           const bateuMes = p.client_due_date && p.client_due_date.startsWith(mStr);
 
-          if (p.is_recurrent || (faltaReceber > 0 && bateuMes)) {
+          let entraRecorrenteNoMes = false;
+          if (p.is_recurrent && p.client_due_date) {
+            const [anoIni, mesIni] = p.client_due_date.split('-').map(Number);
+            if (currAno > anoIni || (currAno === anoIni && currMes >= mesIni)) {
+              entraRecorrenteNoMes = true;
+            }
+          }
+
+          if (entraRecorrenteNoMes || (!p.is_recurrent && faltaReceber > 0 && bateuMes)) {
             const val = p.is_recurrent ? (p.sale_value || 0) : faltaReceber;
             if (st !== 'INADIMPLENTE') entMes += val;
           }
@@ -942,7 +949,15 @@
         const dataVenc = p.client_due_date ? p.client_due_date.substring(8, 10) : '10';
         const bateuMes = p.client_due_date && p.client_due_date.startsWith(mesAno);
 
-        if (p.is_recurrent || (faltaReceber > 0 && bateuMes)) {
+        let entraRecorrenteNoMes = false;
+        if (p.is_recurrent && p.client_due_date) {
+          const [anoIni, mesIni] = p.client_due_date.split('-').map(Number);
+          if (anoAlvo > anoIni || (anoAlvo === anoIni && mesAlvo >= mesIni)) {
+            entraRecorrenteNoMes = true;
+          }
+        }
+
+        if (entraRecorrenteNoMes || (!p.is_recurrent && faltaReceber > 0 && bateuMes)) {
           const valorAEntrar = p.is_recurrent ? (p.sale_value || 0) : faltaReceber;
           const dataExibicao = p.is_recurrent ? `${mesAno}-${dataVenc}` : p.client_due_date;
 
