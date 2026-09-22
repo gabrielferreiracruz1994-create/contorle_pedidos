@@ -585,8 +585,8 @@
 
       const termoBusca = (document.getElementById('busca-pedido')?.value || '').toLowerCase();
       const pedidosFiltrados = pedidos.filter(p => 
-        p.client.toLowerCase().includes(termoBusca) || 
-        p.product.toLowerCase().includes(termoBusca) ||
+        (p.client || '').toLowerCase().includes(termoBusca) || 
+        (p.product || '').toLowerCase().includes(termoBusca) ||
         (p.supplier && p.supplier.toLowerCase().includes(termoBusca))
       );
 
@@ -838,11 +838,9 @@
     function calcularSaldoAcumuladoAte(anoAlvo, mesAlvo, perfilSel) {
       let saldoAcumulado = saldoInicial;
       
-      // Gera lista cronológica mês a mês desde o início dos lançamentos até o mês selecionado
       let minAno = hoje.getFullYear();
       let minMes = hoje.getMonth() + 1;
 
-      // Procura a data mais antiga entre contas e pedidos
       bills.forEach(b => {
         if(b.due_date) {
           const [a, m] = b.due_date.split('-').map(Number);
@@ -901,7 +899,6 @@
           saiMes += faturasCardMes[cardId];
         });
 
-        // Se for o mês alvo atual, guardamos o saldo do mês anterior (acumulado até o mês imediatamente anterior)
         if (currAno === anoAlvo && currMes === mesAlvo) {
           return { saldoAnterior: saldoAcumulado, entradasMes: entMes, saidasMes: saiMes };
         }
@@ -925,11 +922,9 @@
       if(!mesAno) return;
       const [anoAlvo, mesAlvo] = mesAno.split('-').map(Number);
 
-      // Calcula o saldo anterior acumulado até o mês anterior
       let mesAntNum = mesAlvo - 1;
       let anoAntNum = anoAlvo;
       if(mesAntNum < 1) { mesAntNum = 12; anoAntNum--; }
-      const mesAntStr = `${anoAntNum}-${String(mesAntNum).padStart(2, '0')}`;
       
       const dadosAnt = calcularSaldoAcumuladoAte(anoAlvo, mesAlvo, perfilSel);
       const saldoAnterior = dadosAnt.saldoAnterior;
@@ -1268,7 +1263,6 @@
       billToDeleteId = id;
 
       if(b.total_installments > 1) {
-        document.getElementById('modal-delete-bill').classList.add('hidden'); // Ajuste visual
         document.getElementById('modal-delete-bill').classList.remove('hidden');
       } else {
         if(confirm('Tem certeza que deseja excluir este lançamento?')) {
