@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
+    .subtab-active { background-color: #2563eb !important; color: white !important; font-weight: 700 !important; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-12">
@@ -60,11 +61,54 @@
     </div>
 
     <!-- ABA 1: PEDIDOS -->
-    <section id="sec-pedidos">
-      <div class="bg-white p-4 rounded-xl border border-slate-200 mb-4 flex justify-between items-center">
-        <input type="text" id="busca-pedido" onkeyup="renderizarPedidos()" placeholder="Buscar cliente, produto ou fornecedor..." class="w-80 p-2 border border-slate-200 rounded-lg text-sm">
-        <div class="text-xs font-semibold text-slate-500">Gestão Operacional de Vendas</div>
+    <section id="sec-pedidos" class="space-y-4">
+      
+      <!-- CARDS DE RESUMO DO MÓDULO DE PEDIDOS -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex justify-between items-center shadow-sm">
+          <div>
+            <span class="text-[10px] font-bold uppercase text-amber-800">Total a Receber (Clientes)</span>
+            <div id="res-ped-receber" class="text-xl font-black text-amber-800">R$ 0,00</div>
+          </div>
+          <div class="bg-amber-200 text-amber-800 p-2.5 rounded-lg"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></div>
+        </div>
+
+        <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 flex justify-between items-center shadow-sm">
+          <div>
+            <span class="text-[10px] font-bold uppercase text-purple-800">Total a Pagar (Fornecedores)</span>
+            <div id="res-ped-pagar" class="text-xl font-black text-purple-800">R$ 0,00</div>
+          </div>
+          <div class="bg-purple-200 text-purple-800 p-2.5 rounded-lg"><i class="fa-solid fa-truck-ramp-box text-lg"></i></div>
+        </div>
+
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex justify-between items-center shadow-sm">
+          <div>
+            <span class="text-[10px] font-bold uppercase text-emerald-800">Total Já Recebido</span>
+            <div id="res-ped-recebido" class="text-xl font-black text-emerald-800">R$ 0,00</div>
+          </div>
+          <div class="bg-emerald-200 text-emerald-800 p-2.5 rounded-lg"><i class="fa-solid fa-circle-check text-lg"></i></div>
+        </div>
+
+        <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 flex justify-between items-center shadow-sm">
+          <div>
+            <span class="text-[10px] font-bold uppercase text-rose-800">Total Inadimplente</span>
+            <div id="res-ped-inadimplente" class="text-xl font-black text-rose-800">R$ 0,00</div>
+          </div>
+          <div class="bg-rose-200 text-rose-800 p-2.5 rounded-lg"><i class="fa-solid fa-triangle-exclamation text-lg"></i></div>
+        </div>
       </div>
+
+      <!-- SUB-ABAS E BUSCA DE PEDIDOS -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+          <button onclick="mudarSubAbaPedidos('ativos')" id="subtab-ativos" class="px-4 py-2 rounded-md text-xs font-bold subtab-active transition">Em Andamento</button>
+          <button onclick="mudarSubAbaPedidos('atendidos')" id="subtab-atendidos" class="px-4 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition">Atendidos (<span id="count-atendidos">0</span>)</button>
+          <button onclick="mudarSubAbaPedidos('inadimplentes')" id="subtab-inadimplentes" class="px-4 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition">Inadimplentes (<span id="count-inadimplentes">0</span>)</button>
+        </div>
+
+        <input type="text" id="busca-pedido" onkeyup="renderizarPedidos()" placeholder="Buscar cliente, produto ou fornecedor..." class="w-80 p-2 border border-slate-200 rounded-lg text-sm">
+      </div>
+
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 border-b text-xs uppercase text-slate-500">
@@ -83,7 +127,6 @@
 
     <!-- ABA 2: FINANCEIRO GERAL -->
     <section id="sec-financeiro" class="hidden space-y-6">
-      
       <div id="box-cartoes" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -253,7 +296,8 @@
             <option value="EM PRODUÇÃO" selected>EM PRODUÇÃO</option>
             <option value="AGUARDANDO RETIRADA OU ENTREGA">AGUARDANDO RETIRADA OU ENTREGA</option>
             <option value="AGUARDANDO PAGAMENTO FINAL">AGUARDANDO PAGAMENTO FINAL</option>
-            <option value="INADIMPLENTE">INADIMPLENTE (Tirar do Caixa)</option>
+            <option value="INADIMPLENTE">INADIMPLENTE (Vai para Inadimplentes)</option>
+            <option value="ATENDIDO">ATENDIDO (Vai para Atendidos)</option>
             <option value="FINALIZADO">FINALIZADO</option>
           </select>
         </div>
@@ -309,6 +353,26 @@
           <button type="submit" id="btn-save-order" class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-semibold">Salvar Pedido</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL ATENDER PEDIDO (CONFIRMAR RECEBIMENTO) -->
+  <div id="modal-atender" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 space-y-4">
+      <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-600"></i> Atender Pedido</h3>
+      <p id="atender-texto-cliente" class="text-xs text-slate-600 leading-relaxed">Confirma o atendimento deste pedido? Informe o valor efetivamente recebido para dar entrada no Fluxo de Caixa:</p>
+      
+      <input type="hidden" id="atender_ped_id" value="">
+      
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Valor Recebido do Cliente (R$)</label>
+        <input type="number" step="0.01" id="atender_valor_recebido" class="w-full p-2 border rounded font-bold text-emerald-700 text-sm">
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button type="button" onclick="fecharModalAtender()" class="px-3 py-2 border rounded text-xs">Cancelar</button>
+        <button type="button" onclick="confirmarAtendimentoPedido()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">Confirmar e Atender</button>
+      </div>
     </div>
   </div>
 
@@ -475,10 +539,10 @@
     let profiles = [];
     let cards = [];
     let saldoInicial = 0.0;
+    let subAbaPedidosAtual = 'ativos';
     let deferredPrompt;
     let billToDeleteId = null;
 
-    // Função auxiliar para formatar data de AAAA-MM-DD para DD/MM/AAAA
     function formatarDataBR(dataStr) {
       if (!dataStr) return '-';
       const partes = dataStr.split('-');
@@ -582,7 +646,8 @@
 
     function getStatusClass(status) {
       const st = (status || '').toUpperCase();
-      if (st === 'INADIMPLENTE') return 'bg-purple-900 text-white border-purple-900 font-bold';
+      if (st === 'INADIMPLENTE') return 'bg-rose-900 text-white border-rose-900 font-bold';
+      if (st === 'ATENDIDO') return 'bg-emerald-900 text-white border-emerald-900 font-bold';
       if (st.includes('AGUARDANDO PAGAMENTO')) return 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
       if (st === 'EM PRODUÇÃO') return 'bg-amber-100 text-amber-800 border-amber-300 font-bold';
       if (st === 'AGUARDANDO RETIRADA OU ENTREGA') return 'bg-blue-100 text-blue-800 border-blue-300 font-bold';
@@ -590,20 +655,74 @@
       return 'bg-slate-100 text-slate-800 border-slate-300';
     }
 
+    function mudarSubAbaPedidos(sub) {
+      subAbaPedidosAtual = sub;
+      document.getElementById('subtab-ativos').className = sub === 'ativos' ? 'px-4 py-2 rounded-md text-xs font-bold subtab-active transition' : 'px-4 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition';
+      document.getElementById('subtab-atendidos').className = sub === 'atendidos' ? 'px-4 py-2 rounded-md text-xs font-bold subtab-active transition' : 'px-4 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition';
+      document.getElementById('subtab-inadimplentes').className = sub === 'inadimplentes' ? 'px-4 py-2 rounded-md text-xs font-bold subtab-active transition' : 'px-4 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition';
+      renderizarPedidos();
+    }
+
     function renderizarPedidos() {
       const tbody = document.getElementById('tabela-pedidos');
       if (!tbody) return;
       tbody.innerHTML = '';
 
+      // Atualiza os contadores das sub-abas
+      const countAtendidos = pedidos.filter(p => (p.status_production || '').toUpperCase() === 'ATENDIDO').length;
+      const countInadimplentes = pedidos.filter(p => (p.status_production || '').toUpperCase() === 'INADIMPLENTE').length;
+      document.getElementById('count-atendidos').innerText = countAtendidos;
+      document.getElementById('count-inadimplentes').innerText = countInadimplentes;
+
+      // Calcula os resumos do topo do módulo de pedidos
+      let totalReceber = 0;
+      let totalPagarForn = 0;
+      let totalRecebido = 0;
+      let totalInadimplente = 0;
+
+      pedidos.forEach(p => {
+        const st = (p.status_production || '').toUpperCase();
+        const faltaRec = (p.sale_value || 0) - (p.paid_by_client || 0);
+        const faltaForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
+
+        if (st === 'INADIMPLENTE') {
+          totalInadimplente += (p.sale_value || 0);
+        } else {
+          totalReceber += Math.max(faltaRec, 0);
+          totalRecebido += (p.paid_by_client || 0);
+        }
+        totalPagarForn += Math.max(faltaForn, 0);
+      });
+
+      document.getElementById('res-ped-receber').innerText = `R$ ${totalReceber.toFixed(2)}`;
+      document.getElementById('res-ped-pagar').innerText = `R$ ${totalPagarForn.toFixed(2)}`;
+      document.getElementById('res-ped-recebido').innerText = `R$ ${totalRecebido.toFixed(2)}`;
+      document.getElementById('res-ped-inadimplente').innerText = `R$ ${totalInadimplente.toFixed(2)}`;
+
+      // Filtra conforme a sub-aba ativa e busca
       const termoBusca = (document.getElementById('busca-pedido')?.value || '').toLowerCase();
-      const pedidosFiltrados = pedidos.filter(p => 
-        (p.client || '').toLowerCase().includes(termoBusca) || 
-        (p.product || '').toLowerCase().includes(termoBusca) ||
-        (p.supplier && p.supplier.toLowerCase().includes(termoBusca))
-      );
+      
+      const pedidosFiltrados = pedidos.filter(p => {
+        const st = (p.status_production || '').toUpperCase();
+        
+        let bateSubAba = false;
+        if (subAbaPedidosAtual === 'ativos') {
+          bateSubAba = (st !== 'ATENDIDO' && st !== 'INADIMPLENTE');
+        } else if (subAbaPedidosAtual === 'atendidos') {
+          bateSubAba = (st === 'ATENDIDO');
+        } else if (subAbaPedidosAtual === 'inadimplentes') {
+          bateSubAba = (st === 'INADIMPLENTE');
+        }
+
+        const bateBusca = (p.client || '').toLowerCase().includes(termoBusca) || 
+                          (p.product || '').toLowerCase().includes(termoBusca) ||
+                          (p.supplier && p.supplier.toLowerCase().includes(termoBusca));
+
+        return bateSubAba && bateBusca;
+      });
 
       if (pedidosFiltrados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido encontrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido encontrado nesta seção.</td></tr>`;
         return;
       }
 
@@ -621,7 +740,8 @@
             <option value="EM PRODUÇÃO" ${stAtual === 'EM PRODUÇÃO' ? 'selected' : ''}>EM PRODUÇÃO</option>
             <option value="AGUARDANDO RETIRADA OU ENTREGA" ${stAtual === 'AGUARDANDO RETIRADA OU ENTREGA' ? 'selected' : ''}>AGUARDANDO RETIRADA/ENTREGA</option>
             <option value="AGUARDANDO PAGAMENTO FINAL" ${stAtual === 'AGUARDANDO PAGAMENTO FINAL' ? 'selected' : ''}>AGUARDANDO PAGTO FINAL</option>
-            <option value="INADIMPLENTE" ${stAtual === 'INADIMPLENTE' ? 'selected' : ''}>🚫 INADIMPLENTE (Tirar do Caixa)</option>
+            <option value="ATENDIDO" ${stAtual === 'ATENDIDO' ? 'selected' : ''}>✅ ATENDIDO (Ir para Atendidos)</option>
+            <option value="INADIMPLENTE" ${stAtual === 'INADIMPLENTE' ? 'selected' : ''}>🚫 INADIMPLENTE (Ir para Inadimplentes)</option>
             <option value="FINALIZADO" ${stAtual === 'FINALIZADO' ? 'selected' : ''}>FINALIZADO</option>
           </select>
         `;
@@ -662,11 +782,64 @@
     }
 
     async function alterarStatusPedido(id, novoStatus) {
+      if (novoStatus === 'ATENDIDO') {
+        abrirModalAtender(id);
+        return;
+      }
       await fetch(`/api/orders/${id}/status`, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ status_production: novoStatus })
       });
+      carregarDados();
+    }
+
+    function abrirModalAtender(id) {
+      const p = pedidos.find(x => x.id === id);
+      if(!p) return;
+      document.getElementById('atender_ped_id').value = p.id;
+      const falta = (p.sale_value || 0) - (p.paid_by_client || 0);
+      document.getElementById('atender_valor_recebido').value = Math.max(falta, 0).toFixed(2);
+      document.getElementById('atender-texto-cliente').innerText = `Confirma o atendimento do pedido de ${p.client}? Informe o valor recebido agora para somar como entrada no Fluxo de Caixa:`;
+      document.getElementById('modal-atender').classList.remove('hidden');
+    }
+
+    function fecharModalAtender() {
+      document.getElementById('modal-atender').classList.add('hidden');
+      renderizarPedidos();
+    }
+
+    async function confirmarAtendimentoPedido() {
+      const id = document.getElementById('atender_ped_id').value;
+      const valorRecebidoAgora = parseFloat(document.getElementById('atender_valor_recebido').value) || 0;
+      const p = pedidos.find(x => x.id == id);
+
+      if (!p) return;
+
+      const novoPagoCliente = (p.paid_by_client || 0) + valorRecebidoAgora;
+
+      // Atualiza o pedido como ATENDIDO e soma o valor pago pelo cliente
+      await fetch(`/api/orders/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          entity: p.entity,
+          client: p.client,
+          product: p.product,
+          production_type: p.production_type,
+          supplier: p.supplier || "",
+          supplier_cost: p.supplier_cost,
+          status_production: 'ATENDIDO',
+          client_due_date: p.client_due_date,
+          supplier_due_date: p.supplier_due_date,
+          sale_value: p.sale_value,
+          paid_by_client: novoPagoCliente,
+          paid_to_supplier: p.paid_to_supplier,
+          is_recurrent: p.is_recurrent
+        })
+      });
+
+      fecharModalAtender();
       carregarDados();
     }
 
@@ -887,6 +1060,9 @@
           const st = (p.status_production || '').toUpperCase();
           const bateuMes = p.client_due_date && p.client_due_date.startsWith(mStr);
 
+          // Inadimplentes NUNCA entram no fluxo
+          if (st === 'INADIMPLENTE') return;
+
           let entraRecorrenteNoMes = false;
           if (p.is_recurrent && p.client_due_date) {
             const [anoIni, mesIni] = p.client_due_date.split('-').map(Number);
@@ -897,7 +1073,7 @@
 
           if (entraRecorrenteNoMes || (!p.is_recurrent && faltaReceber > 0 && bateuMes)) {
             const val = p.is_recurrent ? (p.sale_value || 0) : faltaReceber;
-            if (st !== 'INADIMPLENTE') entMes += val;
+            entMes += val;
           }
 
           const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
@@ -971,6 +1147,9 @@
         const dataVenc = p.client_due_date ? p.client_due_date.substring(8, 10) : '10';
         const bateuMes = p.client_due_date && p.client_due_date.startsWith(mesAno);
 
+        // Inadimplentes NUNCA entram no fluxo
+        if (st === 'INADIMPLENTE') return;
+
         let entraRecorrenteNoMes = false;
         if (p.is_recurrent && p.client_due_date) {
           const [anoIni, mesIni] = p.client_due_date.split('-').map(Number);
@@ -983,11 +1162,7 @@
           const valorAEntrar = p.is_recurrent ? (p.sale_value || 0) : faltaReceber;
           const dataExibicao = p.is_recurrent ? `${mesAno}-${dataVenc}` : p.client_due_date;
 
-          if (st === 'INADIMPLENTE') {
-            lancamentos.push({ data: dataExibicao, origem: 'Pedido Cliente', descricao: `⚠️ Inadimplente (${p.entity}): ${p.client}`, entrada: 0, saida: 0 });
-          } else {
-            lancamentos.push({ data: dataExibicao, origem: 'Pedido Cliente', descricao: `Recebimento ${p.is_recurrent ? '(Contrato Recorrente)' : ''} (${p.entity}): ${p.client}`, entrada: valorAEntrar, saida: 0 });
-          }
+          lancamentos.push({ data: dataExibicao, origem: 'Pedido Cliente', descricao: `Recebimento ${p.is_recurrent ? '(Contrato Recorrente)' : ''} (${p.entity}): ${p.client}`, entrada: valorAEntrar, saida: 0 });
         }
 
         const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
@@ -1035,7 +1210,6 @@
           saldo += (l.entrada - l.saida);
 
           const isFatura = l.origem === 'Cartão de Crédito';
-          const isInadimplente = l.descricao.includes('Inadimplente');
           const isFuro = saldo < 0;
           const dataBR = formatarDataBR(l.data);
 
@@ -1044,7 +1218,7 @@
           if (isFuro) {
             tr.className = 'bg-rose-100 border-l-4 border-rose-600 font-semibold text-rose-950';
           } else {
-            tr.className = isFatura ? 'bg-purple-50/50' : (isInadimplente ? 'bg-rose-50/70' : '');
+            tr.className = isFatura ? 'bg-purple-50/50' : '';
           }
           
           tr.innerHTML = `
