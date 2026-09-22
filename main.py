@@ -12,7 +12,7 @@ import os
 # ==========================================
 # Coloque a sua URL do Supabase abaixo, mantendo as aspas.
 # Exemplo: "postgresql://postgres:SuaSenha@db.abcd123.supabase.co:5432/postgres"
-MINHA_URL_SUPABASE = "postgresql://postgres:[SUA_SENHA]@db.[SEU_PROJETO].supabase.co:5432/postgres"
+MINHA_URL_SUPABASE = "postgresql://postgres.fccxyypigatzjhhxqtua:ElisaAlana220417!@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
 
 # Pega a URL do ambiente (se existir na nuvem) ou usa a do Supabase informada acima
 DATABASE_URL = os.getenv("DATABASE_URL", MINHA_URL_SUPABASE)
