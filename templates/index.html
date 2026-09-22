@@ -106,7 +106,15 @@
           <button onclick="mudarSubAbaPedidos('inadimplentes')" id="subtab-inadimplentes" class="px-4 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition">Inadimplentes (<span id="count-inadimplentes">0</span>)</button>
         </div>
 
-        <input type="text" id="busca-pedido" onkeyup="renderizarPedidos()" placeholder="Buscar cliente, produto ou fornecedor..." class="w-80 p-2 border border-slate-200 rounded-lg text-sm">
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+            <button onclick="navegarMes('filtro-mes-pedidos', -1); renderizarPedidos();" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+            <input type="month" id="filtro-mes-pedidos" onchange="renderizarPedidos()" class="bg-transparent font-bold text-xs p-1 text-slate-700 focus:outline-none cursor-pointer text-center">
+            <button onclick="navegarMes('filtro-mes-pedidos', 1); renderizarPedidos();" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+            <button onclick="limparFiltroMesPedidos()" class="p-1.5 ml-1 bg-white hover:bg-rose-50 text-rose-600 rounded-md border border-slate-200 text-[10px] font-bold px-2 uppercase" title="Ver todos os meses">Limpar Filtro</button>
+          </div>
+          <input type="text" id="busca-pedido" onkeyup="renderizarPedidos()" placeholder="Buscar cliente, prod ou fornecedor..." class="w-full md:w-64 p-2 border border-slate-200 rounded-lg text-sm">
+        </div>
       </div>
 
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -168,7 +176,7 @@
 
           <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
             <button onclick="navegarMes('filtro-mes-fin', -1); renderizarBills();" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-chevron-left"></i></button>
-            <input type="month" id="filtro-mes-fin" onchange="renderizarBills()" class="bg-transparent font-bold text-xs p-1 text-slate-700 focus:outline-none">
+            <input type="month" id="filtro-mes-fin" onchange="renderizarBills()" class="bg-transparent font-bold text-xs p-1 text-slate-700 focus:outline-none cursor-pointer">
             <button onclick="navegarMes('filtro-mes-fin', 1); renderizarBills();" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
 
@@ -211,7 +219,7 @@
             <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Mês de Análise</label>
             <div class="flex items-center bg-slate-800 rounded-lg p-1 border border-slate-700">
               <button onclick="navegarMes('filtro-mes-fluxo', -1); renderizarFluxo();" class="p-1 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-              <input type="month" id="filtro-mes-fluxo" onchange="renderizarFluxo()" class="bg-transparent text-white p-0.5 text-xs font-bold focus:outline-none text-center">
+              <input type="month" id="filtro-mes-fluxo" onchange="renderizarFluxo()" class="bg-transparent text-white p-0.5 text-xs font-bold focus:outline-none cursor-pointer text-center">
               <button onclick="navegarMes('filtro-mes-fluxo', 1); renderizarFluxo();" class="p-1 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-chevron-right text-xs"></i></button>
             </div>
           </div>
@@ -306,7 +314,7 @@
           <input type="checkbox" id="ped_is_recurrent" class="w-4 h-4 text-blue-600 rounded border-gray-300">
           <div>
             <label for="ped_is_recurrent" class="text-xs font-bold text-blue-900 cursor-pointer">Contrato / Recebimento Mensal Recorrente</label>
-            <p class="text-[10px] text-blue-700 leading-tight mt-0.5">Marque para incluir este valor todo mês no seu Fluxo de Caixa a partir da data de vencimento.</p>
+            <p class="text-[10px] text-blue-700 leading-tight mt-0.5">Marque para incluir este valor todo mês no Fluxo de Caixa a partir da data de venc. recebimento.</p>
           </div>
         </div>
 
@@ -341,11 +349,11 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Venc. Recebimento</label>
-            <input type="date" id="ped_client_due_date" class="w-full p-2 border rounded">
+            <input type="date" id="ped_client_due_date" class="w-full p-2 border rounded cursor-pointer">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Venc. Fornecedor</label>
-            <input type="date" id="ped_supplier_due_date" class="w-full p-2 border rounded">
+            <input type="date" id="ped_supplier_due_date" class="w-full p-2 border rounded cursor-pointer">
           </div>
         </div>
         <div class="flex justify-end gap-2 pt-3 border-t">
@@ -402,11 +410,11 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Perfil / Usuário *</label>
-            <select id="bill_entity" required class="w-full p-2 border rounded bg-white"></select>
+            <select id="bill_entity" required class="w-full p-2 border rounded bg-white cursor-pointer"></select>
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Cartão (Opcional)</label>
-            <select id="bill_card_id" class="w-full p-2 border rounded bg-white">
+            <select id="bill_card_id" class="w-full p-2 border rounded bg-white cursor-pointer">
               <option value="">Sem Cartão (Direto)</option>
             </select>
           </div>
@@ -438,7 +446,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Vencimento *</label>
-            <input type="date" id="bill_due_date" required class="w-full p-2 border rounded">
+            <input type="date" id="bill_due_date" required class="w-full p-2 border rounded cursor-pointer">
           </div>
         </div>
 
@@ -509,7 +517,7 @@
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Perfil Responsável *</label>
-          <select id="card_entity" required class="w-full p-2 border rounded bg-white"></select>
+          <select id="card_entity" required class="w-full p-2 border rounded bg-white cursor-pointer"></select>
         </div>
         <div class="grid grid-cols-3 gap-2">
           <div>
@@ -575,6 +583,10 @@
     
     document.getElementById('filtro-mes-fluxo').value = mesAtualStr;
     document.getElementById('filtro-mes-fin').value = mesAtualStr;
+    
+    // Inicializa o filtro de mês dos pedidos
+    const inputMesPed = document.getElementById('filtro-mes-pedidos');
+    if(inputMesPed) inputMesPed.value = mesAtualStr;
 
     function navegarMes(inputId, delta) {
       const el = document.getElementById(inputId);
@@ -582,7 +594,15 @@
       const [ano, mes] = el.value.split('-').map(Number);
       const d = new Date(ano, mes - 1 + delta, 1);
       el.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      renderizarFluxo();
+      
+      if(inputId === 'filtro-mes-fluxo') renderizarFluxo();
+      else if(inputId === 'filtro-mes-fin') renderizarBills();
+      else if(inputId === 'filtro-mes-pedidos') renderizarPedidos();
+    }
+
+    function limparFiltroMesPedidos() {
+      document.getElementById('filtro-mes-pedidos').value = '';
+      renderizarPedidos();
     }
 
     async function carregarDados() {
@@ -668,19 +688,41 @@
       if (!tbody) return;
       tbody.innerHTML = '';
 
-      // Atualiza os contadores das sub-abas
-      const countAtendidos = pedidos.filter(p => (p.status_production || '').toUpperCase() === 'ATENDIDO').length;
-      const countInadimplentes = pedidos.filter(p => (p.status_production || '').toUpperCase() === 'INADIMPLENTE').length;
+      const mesSel = document.getElementById('filtro-mes-pedidos')?.value || '';
+      const termoBusca = (document.getElementById('busca-pedido')?.value || '').toLowerCase();
+
+      // 1. Filtra a base geral pelo MÊS e pela BUSCA (se houver)
+      const pedidosBaseMes = pedidos.filter(p => {
+        const bateBusca = (p.client || '').toLowerCase().includes(termoBusca) || 
+                          (p.product || '').toLowerCase().includes(termoBusca) ||
+                          (p.supplier && p.supplier.toLowerCase().includes(termoBusca));
+        
+        const bateMes = mesSel === '' || (p.client_due_date && p.client_due_date.startsWith(mesSel));
+        
+        return bateBusca && bateMes;
+      });
+
+      // 2. Conta os pedidos do mês em cada categoria para os botões superiores
+      const countAtivos = pedidosBaseMes.filter(p => {
+        const st = (p.status_production || '').toUpperCase();
+        return st !== 'ATENDIDO' && st !== 'INADIMPLENTE';
+      }).length;
+      
+      const countAtendidos = pedidosBaseMes.filter(p => (p.status_production || '').toUpperCase() === 'ATENDIDO').length;
+      const countInadimplentes = pedidosBaseMes.filter(p => (p.status_production || '').toUpperCase() === 'INADIMPLENTE').length;
+      
+      const btnAtivos = document.getElementById('subtab-ativos');
+      if(btnAtivos) btnAtivos.innerText = `Em Andamento (${countAtivos})`;
       document.getElementById('count-atendidos').innerText = countAtendidos;
       document.getElementById('count-inadimplentes').innerText = countInadimplentes;
 
-      // Calcula os resumos do topo do módulo de pedidos
+      // 3. Atualiza os cards coloridos de resumo filtrando apenas para os pedidos visíveis (do mês/busca)
       let totalReceber = 0;
       let totalPagarForn = 0;
       let totalRecebido = 0;
       let totalInadimplente = 0;
 
-      pedidos.forEach(p => {
+      pedidosBaseMes.forEach(p => {
         const st = (p.status_production || '').toUpperCase();
         const faltaRec = (p.sale_value || 0) - (p.paid_by_client || 0);
         const faltaForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
@@ -699,34 +741,21 @@
       document.getElementById('res-ped-recebido').innerText = `R$ ${totalRecebido.toFixed(2)}`;
       document.getElementById('res-ped-inadimplente').innerText = `R$ ${totalInadimplente.toFixed(2)}`;
 
-      // Filtra conforme a sub-aba ativa e busca
-      const termoBusca = (document.getElementById('busca-pedido')?.value || '').toLowerCase();
-      
-      const pedidosFiltrados = pedidos.filter(p => {
+      // 4. Filtra finalmente pela aba selecionada (Ativos, Atendidos, Inadimplentes) para preencher a tabela
+      const pedidosParaRenderizar = pedidosBaseMes.filter(p => {
         const st = (p.status_production || '').toUpperCase();
-        
-        let bateSubAba = false;
-        if (subAbaPedidosAtual === 'ativos') {
-          bateSubAba = (st !== 'ATENDIDO' && st !== 'INADIMPLENTE');
-        } else if (subAbaPedidosAtual === 'atendidos') {
-          bateSubAba = (st === 'ATENDIDO');
-        } else if (subAbaPedidosAtual === 'inadimplentes') {
-          bateSubAba = (st === 'INADIMPLENTE');
-        }
-
-        const bateBusca = (p.client || '').toLowerCase().includes(termoBusca) || 
-                          (p.product || '').toLowerCase().includes(termoBusca) ||
-                          (p.supplier && p.supplier.toLowerCase().includes(termoBusca));
-
-        return bateSubAba && bateBusca;
+        if (subAbaPedidosAtual === 'ativos') return st !== 'ATENDIDO' && st !== 'INADIMPLENTE';
+        if (subAbaPedidosAtual === 'atendidos') return st === 'ATENDIDO';
+        if (subAbaPedidosAtual === 'inadimplentes') return st === 'INADIMPLENTE';
+        return false;
       });
 
-      if (pedidosFiltrados.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido encontrado nesta seção.</td></tr>`;
+      if (pedidosParaRenderizar.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido encontrado nesta seção para o período.</td></tr>`;
         return;
       }
 
-      pedidosFiltrados.forEach(p => {
+      pedidosParaRenderizar.forEach(p => {
         const faltaReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
         const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
         const stAtual = (p.status_production || 'EM PRODUÇÃO').toUpperCase();
@@ -818,7 +847,6 @@
 
       const novoPagoCliente = (p.paid_by_client || 0) + valorRecebidoAgora;
 
-      // Atualiza o pedido como ATENDIDO e soma o valor pago pelo cliente
       await fetch(`/api/orders/${id}`, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
@@ -1060,7 +1088,6 @@
           const st = (p.status_production || '').toUpperCase();
           const bateuMes = p.client_due_date && p.client_due_date.startsWith(mStr);
 
-          // Inadimplentes NUNCA entram no fluxo
           if (st === 'INADIMPLENTE') return;
 
           let entraRecorrenteNoMes = false;
@@ -1147,7 +1174,6 @@
         const dataVenc = p.client_due_date ? p.client_due_date.substring(8, 10) : '10';
         const bateuMes = p.client_due_date && p.client_due_date.startsWith(mesAno);
 
-        // Inadimplentes NUNCA entram no fluxo
         if (st === 'INADIMPLENTE') return;
 
         let entraRecorrenteNoMes = false;
