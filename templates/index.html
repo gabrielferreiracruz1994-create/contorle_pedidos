@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ERP Unificado - Pedidos, Financeiro & Caixa</title>
   
-  <!-- Suporte a PWA -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#2563eb">
   <meta name="mobile-web-app-capable" content="yes">
@@ -63,7 +62,7 @@
     <!-- ABA 1: PEDIDOS -->
     <section id="sec-pedidos">
       <div class="bg-white p-4 rounded-xl border border-slate-200 mb-4 flex justify-between items-center">
-        <input type="text" id="busca-pedido" onkeyup="renderizarPedidos()" placeholder="Buscar cliente ou produto..." class="w-80 p-2 border border-slate-200 rounded-lg text-sm">
+        <input type="text" id="busca-pedido" onkeyup="renderizarPedidos()" placeholder="Buscar cliente, produto ou fornecedor..." class="w-80 p-2 border border-slate-200 rounded-lg text-sm">
         <div class="text-xs font-semibold text-slate-500">Gestão Operacional de Vendas</div>
       </div>
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -73,7 +72,7 @@
               <th class="p-3">Cliente / Produto</th>
               <th class="p-3">Tipo / Status Produção</th>
               <th class="p-3 text-right">Venda / Falta Rec.</th>
-              <th class="p-3 text-right">Custo / Falta Pag. Forn.</th>
+              <th class="p-3 text-right">Fornecedor / Custo</th>
               <th class="p-3 text-center">Ações</th>
             </tr>
           </thead>
@@ -85,10 +84,8 @@
     <!-- ABA 2: FINANCEIRO GERAL -->
     <section id="sec-financeiro" class="hidden space-y-6">
       
-      <!-- CARTÕES -->
       <div id="box-cartoes" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
 
-      <!-- PAINEL DE TOTAIS E CONTROLE DA ABA FINANCEIRO -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 flex justify-between items-center">
           <div>
@@ -115,7 +112,6 @@
         </div>
       </div>
 
-      <!-- BARRA DE CONTROLES E FILTROS DO FINANCEIRO -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-xl border border-slate-200 gap-4">
         <div>
           <h2 class="text-base font-bold text-slate-800">Contas, Despesas e Faturas</h2>
@@ -123,12 +119,10 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <!-- FILTRO POR PERFIL DO FINANCEIRO -->
           <select id="filtro-perfil-fin" onchange="renderizarBills()" class="bg-slate-100 font-bold text-xs p-2 rounded-lg border border-slate-200 focus:outline-none cursor-pointer">
             <option value="ALL">ALL - TODOS OS PERFIS</option>
           </select>
 
-          <!-- SELETOR DE MÊS -->
           <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
             <button onclick="navegarMes('filtro-mes-fin', -1); renderizarBills();" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-chevron-left"></i></button>
             <input type="month" id="filtro-mes-fin" onchange="renderizarBills()" class="bg-transparent font-bold text-xs p-1 text-slate-700 focus:outline-none">
@@ -214,14 +208,15 @@
 
   </main>
 
-  <!-- MODAL ADICIONAR NOVO PEDIDO -->
+  <!-- MODAL ADICIONAR / EDITAR PEDIDO -->
   <div id="modal-pedido" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
       <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
-        <h3 class="font-bold text-base">Novo Pedido</h3>
+        <h3 id="modal-pedido-titulo" class="font-bold text-base">Novo Pedido</h3>
         <button onclick="fecharModalPedido()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <form onsubmit="salvarPedido(event)" class="p-6 space-y-3 text-sm">
+        <input type="hidden" id="ped_id" value="">
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label>
           <input type="text" id="ped_client" required placeholder="Nome do Cliente" class="w-full p-2 border rounded">
@@ -270,7 +265,7 @@
         <div class="p-3 bg-purple-50/50 border border-purple-100 rounded-lg space-y-2">
           <div>
             <label class="block text-xs font-semibold text-purple-900 mb-1">Nome Fornecedor</label>
-            <input type="text" id="ped_supplier" placeholder="Ex: Gráfica Zap" class="w-full p-2 border rounded bg-white">
+            <input type="text" id="ped_supplier" placeholder="Ex: Gráfica Zap, Print, etc." class="w-full p-2 border rounded bg-white">
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -382,14 +377,15 @@
     </div>
   </div>
 
-  <!-- MODAL CARTÕES -->
+  <!-- MODAL ADICIONAR / EDITAR CARTÕES -->
   <div id="modal-cartao" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
       <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
-        <h3 class="font-bold text-base">Cadastrar Cartão de Crédito</h3>
+        <h3 id="modal-cartao-titulo" class="font-bold text-base">Cadastrar Cartão de Crédito</h3>
         <button onclick="fecharModalCartao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <form onsubmit="salvarCartao(event)" class="p-6 space-y-3 text-sm">
+        <input type="hidden" id="card_id" value="">
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Cartão *</label>
           <input type="text" id="card_name" required placeholder="Ex: Nubank, Itaú Black" class="w-full p-2 border rounded">
@@ -414,7 +410,7 @@
         </div>
         <div class="flex justify-end gap-2 pt-3 border-t">
           <button type="button" onclick="fecharModalCartao()" class="px-4 py-2 border rounded text-xs">Cancelar</button>
-          <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded text-xs font-semibold">Salvar Cartão</button>
+          <button type="submit" id="btn-save-card" class="px-4 py-2 bg-purple-600 text-white rounded text-xs font-semibold">Salvar Cartão</button>
         </div>
       </form>
     </div>
@@ -535,7 +531,11 @@
       tbody.innerHTML = '';
 
       const termoBusca = (document.getElementById('busca-pedido')?.value || '').toLowerCase();
-      const pedidosFiltrados = pedidos.filter(p => p.client.toLowerCase().includes(termoBusca) || p.product.toLowerCase().includes(termoBusca));
+      const pedidosFiltrados = pedidos.filter(p => 
+        p.client.toLowerCase().includes(termoBusca) || 
+        p.product.toLowerCase().includes(termoBusca) ||
+        (p.supplier && p.supplier.toLowerCase().includes(termoBusca))
+      );
 
       if (pedidosFiltrados.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido encontrado.</td></tr>`;
@@ -546,6 +546,8 @@
         const faltaReceber = (p.sale_value || 0) - (p.paid_by_client || 0);
         const faltaPagarForn = (p.supplier_cost || 0) - (p.paid_to_supplier || 0);
         const stAtual = (p.status_production || 'EM PRODUÇÃO').toUpperCase();
+
+        const nomeFornecedor = p.supplier && p.supplier.trim() !== '' ? p.supplier : (p.production_type === 'TERCEIRO' ? 'Não informado' : 'Própria / Interno');
 
         const selectStatusInline = `
           <select onchange="alterarStatusPedido(${p.id}, this.value)" class="text-[10px] w-full font-bold px-1 py-1 rounded border cursor-pointer focus:outline-none mt-1 ${getStatusClass(stAtual)}">
@@ -572,15 +574,17 @@
             </div>
           </td>
           <td class="p-3 text-right">
-            ${p.production_type === 'TERCEIRO' ? `
+            <span class="text-xs font-bold text-purple-700 block">${nomeFornecedor}</span>
+            ${p.production_type === 'TERCEIRO' || (p.supplier_cost > 0) ? `
               <div class="font-bold text-slate-800">R$ ${(p.supplier_cost || 0).toFixed(2)}</div>
               <div class="text-[11px] ${faltaPagarForn > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600 font-bold'}">
                 ${faltaPagarForn > 0 ? 'Falta: R$ ' + faltaPagarForn.toFixed(2) : 'Quitado'}
               </div>
-            ` : '<span class="text-slate-300">-</span>'}
+            ` : '<span class="text-slate-400 text-xs">-</span>'}
           </td>
-          <td class="p-3 text-center">
-            <button onclick="deletarPedido(${p.id})" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>
+          <td class="p-3 text-center flex justify-center items-center gap-2">
+            <button onclick="editarPedido(${p.id})" class="text-blue-600 hover:text-blue-800 p-1" title="Editar Lançamento"><i class="fa-solid fa-pen-to-square"></i></button>
+            <button onclick="deletarPedido(${p.id})" class="text-rose-600 hover:text-rose-800 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -613,6 +617,10 @@
                 <h3 class="font-bold text-slate-800"><i class="fa-solid fa-credit-card text-purple-600 mr-1"></i> ${c.name}</h3>
                 <span class="text-[10px] uppercase font-bold text-slate-400">${c.entity}</span>
               </div>
+              <div class="flex items-center gap-2">
+                <button onclick="editarCartao(${c.id})" class="text-slate-400 hover:text-blue-600 text-xs p-1" title="Editar Cartão"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="deletarCartao(${c.id})" class="text-slate-400 hover:text-rose-600 text-xs p-1" title="Excluir Cartão"><i class="fa-solid fa-trash"></i></button>
+              </div>
             </div>
             <div class="flex justify-between text-xs mt-3">
               <span class="text-slate-500">Limite: <b class="text-slate-800">R$ ${c.total_limit.toFixed(2)}</b></span>
@@ -635,14 +643,12 @@
       const mesSel = document.getElementById('filtro-mes-fin').value;
       const perfilSel = document.getElementById('filtro-perfil-fin')?.value || 'ALL';
 
-      // FILTRAR CONTAS POR MÊS E PERFIL
       const contasNormais = bills.filter(b => {
         const bateuMes = !b.card_id && b.due_date && b.due_date.startsWith(mesSel);
         const bateuPerfil = (perfilSel === 'ALL' || b.entity === perfilSel);
         return bateuMes && bateuPerfil;
       });
 
-      // CÁLCULO DOS RESUMOS (A PAGAR, PAGO, TOTAL DO MÊS)
       let totalAPagar = 0;
       let totalPago = 0;
 
@@ -656,7 +662,6 @@
 
       const totalMes = totalAPagar + totalPago;
 
-      // ATUALIZA CARDS DE RESUMO NA TELA
       document.getElementById('resumo-a-pagar').innerText = `R$ ${totalAPagar.toFixed(2)}`;
       document.getElementById('resumo-pago').innerText = `R$ ${totalPago.toFixed(2)}`;
       document.getElementById('resumo-total-mes').innerText = `R$ ${totalMes.toFixed(2)}`;
@@ -774,12 +779,50 @@
     }
 
     function abrirModalPedido() {
+      document.getElementById('modal-pedido-titulo').innerText = "Novo Pedido";
+      document.getElementById('ped_id').value = "";
+      document.getElementById('ped_client').value = "";
+      document.getElementById('ped_product').value = "";
+      document.getElementById('ped_supplier').value = "";
+      document.getElementById('ped_sale_value').value = "0.00";
+      document.getElementById('ped_paid_by_client').value = "0.00";
+      document.getElementById('ped_supplier_cost').value = "0.00";
+      document.getElementById('ped_paid_to_supplier').value = "0.00";
+      document.getElementById('ped_client_due_date').value = "";
+      document.getElementById('ped_supplier_due_date').value = "";
+
       const selectEntity = document.getElementById('ped_entity');
       selectEntity.innerHTML = '';
       if (profiles.length === 0) selectEntity.innerHTML = '<option value="Empresas">Empresas</option>';
       else profiles.forEach(p => selectEntity.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+
       document.getElementById('modal-pedido').classList.remove('hidden');
     }
+
+    function editarPedido(id) {
+      const p = pedidos.find(x => x.id === id);
+      if(!p) return;
+
+      abrirModalPedido();
+      document.getElementById('modal-pedido-titulo').innerText = "Editar Pedido";
+      document.getElementById('ped_id').value = p.id;
+
+      document.getElementById('ped_client').value = p.client || "";
+      document.getElementById('ped_product').value = p.product || "";
+      document.getElementById('ped_entity').value = p.entity || "";
+      document.getElementById('ped_production_type').value = p.production_type || "PROPRIA";
+      document.getElementById('ped_status_production').value = p.status_production || "EM PRODUÇÃO";
+      document.getElementById('ped_supplier').value = p.supplier || "";
+      
+      document.getElementById('ped_sale_value').value = (p.sale_value || 0).toFixed(2);
+      document.getElementById('ped_paid_by_client').value = (p.paid_by_client || 0).toFixed(2);
+      document.getElementById('ped_supplier_cost').value = (p.supplier_cost || 0).toFixed(2);
+      document.getElementById('ped_paid_to_supplier').value = (p.paid_to_supplier || 0).toFixed(2);
+
+      document.getElementById('ped_client_due_date').value = p.client_due_date || "";
+      document.getElementById('ped_supplier_due_date').value = p.supplier_due_date || "";
+    }
+
     function fecharModalPedido() { document.getElementById('modal-pedido').classList.add('hidden'); }
 
     async function salvarPedido(e) {
@@ -787,12 +830,14 @@
       const btn = document.getElementById('btn-save-order');
       btn.disabled = true; btn.innerText = "Salvando...";
 
+      const id = document.getElementById('ped_id').value;
+
       const body = {
         entity: document.getElementById('ped_entity').value,
         client: document.getElementById('ped_client').value,
         product: document.getElementById('ped_product').value,
         production_type: document.getElementById('ped_production_type').value,
-        supplier: document.getElementById('ped_supplier').value || "Fornecedor",
+        supplier: document.getElementById('ped_supplier').value || "",
         supplier_cost: parseFloat(document.getElementById('ped_supplier_cost').value) || 0,
         status_production: document.getElementById('ped_status_production').value,
         client_due_date: document.getElementById('ped_client_due_date').value || null,
@@ -803,7 +848,11 @@
       };
 
       try {
-        await fetch('/api/orders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+        if(id) {
+          await fetch(`/api/orders/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+        } else {
+          await fetch('/api/orders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+        }
       } finally {
         btn.disabled = false; btn.innerText = "Salvar Pedido";
         fecharModalPedido(); carregarDados();
@@ -933,13 +982,68 @@
     async function deletarPerfil(id) { if(confirm('Excluir este perfil?')) { await fetch(`/api/profiles/${id}`, { method: 'DELETE' }); fecharModalPerfil(); carregarDados(); } }
 
     function abrirModalCartao() {
+      document.getElementById('modal-cartao-titulo').innerText = "Cadastrar Cartão de Crédito";
+      document.getElementById('card_id').value = "";
+      document.getElementById('card_name').value = "";
+      document.getElementById('card_limit').value = "";
+      document.getElementById('card_closing').value = "";
+      document.getElementById('card_due').value = "";
+
       const selectEntity = document.getElementById('card_entity');
       selectEntity.innerHTML = '';
       profiles.forEach(p => selectEntity.innerHTML += `<option value="${p.name}">${p.name}</option>`);
       document.getElementById('modal-cartao').classList.remove('hidden');
     }
+
+    function editarCartao(id) {
+      const c = cards.find(x => x.id === id);
+      if(!c) return;
+
+      abrirModalCartao();
+      document.getElementById('modal-cartao-titulo').innerText = "Editar Cartão de Crédito";
+      document.getElementById('card_id').value = c.id;
+      document.getElementById('card_name').value = c.name;
+      document.getElementById('card_entity').value = c.entity;
+      document.getElementById('card_limit').value = c.total_limit;
+      document.getElementById('card_closing').value = c.closing_day;
+      document.getElementById('card_due').value = c.due_day;
+    }
+
     function fecharModalCartao() { document.getElementById('modal-cartao').classList.add('hidden'); }
-    async function salvarCartao(e) { e.preventDefault(); await fetch('/api/cards', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: document.getElementById('card_name').value, entity: document.getElementById('card_entity').value, total_limit: parseFloat(document.getElementById('card_limit').value), closing_day: parseInt(document.getElementById('card_closing').value), due_day: parseInt(document.getElementById('card_due').value) }) }); fecharModalCartao(); carregarDados(); }
+
+    async function salvarCartao(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-save-card');
+      btn.disabled = true; btn.innerText = "Salvando...";
+
+      const id = document.getElementById('card_id').value;
+
+      const body = {
+        name: document.getElementById('card_name').value,
+        entity: document.getElementById('card_entity').value,
+        total_limit: parseFloat(document.getElementById('card_limit').value),
+        closing_day: parseInt(document.getElementById('card_closing').value),
+        due_day: parseInt(document.getElementById('card_due').value)
+      };
+
+      try {
+        if(id) {
+          await fetch(`/api/cards/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+        } else {
+          await fetch('/api/cards', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+        }
+      } finally {
+        btn.disabled = false; btn.innerText = "Salvar Cartão";
+        fecharModalCartao(); carregarDados();
+      }
+    }
+
+    async function deletarCartao(id) {
+      if(confirm('Tem certeza que deseja excluir este cartão? Todas as faturas vinculadas a ele serão desvinculadas.')) {
+        await fetch(`/api/cards/${id}`, { method: 'DELETE' });
+        carregarDados();
+      }
+    }
 
     function mudarAba(aba) {
       document.getElementById('sec-pedidos').classList.toggle('hidden', aba !== 'pedidos');
