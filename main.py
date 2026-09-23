@@ -119,6 +119,7 @@ class BillSchema(BaseModel):
     due_date: str
     is_recurrent: bool = False
     card_id: Optional[int] = None
+    created_by_user: Optional[str] = None
 
 class BillUpdateSchema(BaseModel):
     mode: str = "SINGLE" # SINGLE, FUTURE, ALL
