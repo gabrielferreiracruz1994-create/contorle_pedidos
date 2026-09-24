@@ -11,7 +11,7 @@ import os
 # CONFIGURAÇÃO DO BANCO DE DADOS (SUPABASE / POSTGRESQL)
 # ==========================================
 # COLE A SUA URL DO SUPABASE AQUI:
-MINHA_URL_SUPABASE = "postgresql://postgres:[SUA_SENHA]@db.[SEU_PROJETO].supabase.co:5432/postgres"
+MINHA_URL_SUPABASE = "postgresql://postgresql://postgres.fccxyypigatzjhhxqtua:ElisaAlana220417!@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
 
 DATABASE_URL = os.getenv("DATABASE_URL", MINHA_URL_SUPABASE)
 if DATABASE_URL.startswith("postgres://"): DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
@@ -74,7 +74,7 @@ class ProfileDB(Base):
     __tablename__ = "profiles"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
-    logo = Column(Text, nullable=True) # <-- CAMPO DA LOGO AQUI
+    logo = Column(Text, nullable=True)
 
 class CardDB(Base):
     __tablename__ = "cards"
@@ -152,7 +152,7 @@ class QuoteStatusSchema(BaseModel):
 
 class ProfileSchema(BaseModel):
     name: str
-    logo: Optional[str] = None # <-- CAMPO DA LOGO AQUI
+    logo: Optional[str] = None
 
 class CardSchema(BaseModel):
     name: str
@@ -204,6 +204,34 @@ def get_profiles():
 def create_profile(profile: ProfileSchema):
     db = SessionLocal()
     db.add(ProfileDB(name=profile.name, logo=profile.logo))
+    db.commit()
+    db.close()
+    return {"success": True}
+
+# ==========================================
+# NOVA ROTA: EDITAR PERFIL (COM ATUALIZAÇÃO EM CASCATA)
+# ==========================================
+@app.put("/api/profiles/{id}")
+def update_profile(id: int, profile: ProfileSchema):
+    db = SessionLocal()
+    db_profile = db.query(ProfileDB).filter(ProfileDB.id == id).first()
+    if not db_profile:
+        db.close()
+        raise HTTPException(status_code=404, detail="Perfil não encontrado")
+    
+    old_name = db_profile.name
+    new_name = profile.name
+    
+    db_profile.name = new_name
+    db_profile.logo = profile.logo
+    
+    # Se o nome da empresa mudou, atualiza todos os pedidos, contas e orçamentos antigos pra não perder o vínculo!
+    if old_name != new_name:
+        db.query(OrderDB).filter(OrderDB.entity == old_name).update({OrderDB.entity: new_name})
+        db.query(BillDB).filter(BillDB.entity == old_name).update({BillDB.entity: new_name})
+        db.query(QuoteDB).filter(QuoteDB.entity == old_name).update({QuoteDB.entity: new_name})
+        db.query(CardDB).filter(CardDB.entity == old_name).update({CardDB.entity: new_name})
+
     db.commit()
     db.close()
     return {"success": True}
