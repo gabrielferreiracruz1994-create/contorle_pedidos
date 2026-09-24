@@ -76,7 +76,6 @@
         </div>
       </div>
 
-      <!-- SUB-ABAS E BUSCA DE PEDIDOS -->
       <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3">
         <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
           <button onclick="mudarSubAbaPedidos('orcamentos')" id="subtab-orcamentos" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition flex items-center gap-1"><i class="fa-solid fa-file-invoice"></i> Orçamentos (<span id="count-orcamentos">0</span>)</button>
@@ -184,11 +183,16 @@
       </div>
       <div class="p-6 space-y-4">
         <form onsubmit="salvarPerfil(event)" class="bg-slate-50 p-4 border border-slate-200 rounded-lg space-y-3">
-          <p class="text-xs text-slate-500 font-bold uppercase mb-2">Novo Perfil / Empresa</p>
+          <div class="flex justify-between items-center mb-1">
+            <p class="text-xs text-slate-500 font-bold uppercase" id="titulo-form-perfil">Novo Perfil / Empresa</p>
+            <button type="button" onclick="cancelarEdicaoPerfil()" id="btn-cancelar-edicao" class="text-xs text-blue-600 hidden hover:text-blue-800 font-bold">Cancelar Edição</button>
+          </div>
+          <input type="hidden" id="novo_perfil_id" value="">
           <input type="text" id="novo_perfil_nome" required placeholder="Nome (Ex: Cavernatec)" class="w-full p-2 border border-slate-300 rounded text-sm">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Logo da Empresa (Aparece no PDF)</label>
             <input type="file" id="novo_perfil_logo" accept="image/*" class="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            <p id="msg_logo_existente" class="text-[10px] text-slate-400 mt-1 hidden">Deixe em branco para manter a logo atual.</p>
           </div>
           <button type="submit" id="btn-salvar-perfil" class="w-full bg-blue-600 text-white px-3 py-2 rounded text-xs font-semibold hover:bg-blue-700">Cadastrar Perfil</button>
         </form>
@@ -397,16 +401,48 @@
     }
 
     // =====================================
-    // LOGICA DE PERFIS (AGORA COM LOGO)
+    // LÓGICA DE PERFIS (AGORA COM EDIÇÃO)
     // =====================================
     function abrirModalPerfil() {
+      cancelarEdicaoPerfil(); // Garante que a tela abre limpa
+      atualizarListaPerfis();
+      document.getElementById('modal-perfil').classList.remove('hidden');
+    }
+    
+    function atualizarListaPerfis() {
       const lista = document.getElementById('lista-perfis'); lista.innerHTML = '';
       profiles.forEach(p => { 
         const thumb = p.logo ? `<img src="${p.logo}" class="h-6 w-6 object-contain rounded mr-2 border bg-white">` : `<div class="h-6 w-6 bg-slate-200 rounded mr-2 flex items-center justify-center text-[10px] text-slate-400"><i class="fa-solid fa-image"></i></div>`;
-        lista.innerHTML += `<li class="py-2 flex justify-between items-center border-b"><div class="flex items-center">${thumb} <span class="font-bold">${p.name}</span></div><button onclick="deletarPerfil(${p.id})" class="text-xs text-rose-600 px-2 py-1"><i class="fa-solid fa-trash"></i></button></li>`; 
+        lista.innerHTML += `<li class="py-2 flex justify-between items-center border-b">
+          <div class="flex items-center">${thumb} <span class="font-bold">${p.name}</span></div>
+          <div class="flex gap-2">
+            <button onclick="editarPerfil(${p.id})" class="text-xs text-blue-600 px-2 py-1"><i class="fa-solid fa-pen"></i></button>
+            <button onclick="deletarPerfil(${p.id})" class="text-xs text-rose-600 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </li>`; 
       });
-      document.getElementById('modal-perfil').classList.remove('hidden');
     }
+
+    function editarPerfil(id) {
+      const p = profiles.find(x => x.id === id); if(!p) return;
+      document.getElementById('novo_perfil_id').value = p.id;
+      document.getElementById('novo_perfil_nome').value = p.name;
+      document.getElementById('titulo-form-perfil').innerText = "Editando Perfil";
+      document.getElementById('btn-salvar-perfil').innerText = "Atualizar Perfil";
+      document.getElementById('btn-cancelar-edicao').classList.remove('hidden');
+      document.getElementById('msg_logo_existente').classList.remove('hidden');
+    }
+
+    function cancelarEdicaoPerfil() {
+      document.getElementById('novo_perfil_id').value = '';
+      document.getElementById('novo_perfil_nome').value = '';
+      document.getElementById('novo_perfil_logo').value = '';
+      document.getElementById('titulo-form-perfil').innerText = "Novo Perfil / Empresa";
+      document.getElementById('btn-salvar-perfil').innerText = "Cadastrar Perfil";
+      document.getElementById('btn-cancelar-edicao').classList.add('hidden');
+      document.getElementById('msg_logo_existente').classList.add('hidden');
+    }
+
     function fecharModalPerfil() { document.getElementById('modal-perfil').classList.add('hidden'); }
     
     async function salvarPerfil(e) { 
@@ -418,30 +454,33 @@
       let base64Logo = null;
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
-        // Converte a imagem pra base64 pra salvar direto no banco
-        base64Logo = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        });
+        base64Logo = await new Promise((resolve) => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.readAsDataURL(file); });
       }
 
-      await fetch('/api/profiles', { 
-        method: 'POST', 
-        headers: {'Content-Type': 'application/json'}, 
-        body: JSON.stringify({ 
-          name: document.getElementById('novo_perfil_nome').value,
-          logo: base64Logo
-        }) 
-      }); 
+      const id = document.getElementById('novo_perfil_id').value;
+      const body = { name: document.getElementById('novo_perfil_nome').value };
       
-      document.getElementById('novo_perfil_nome').value = ''; 
-      fileInput.value = '';
-      fecharModalPerfil(); 
-      carregarDados(); 
-      btn.innerText = "Cadastrar Perfil"; btn.disabled = false;
+      // Se tiver uma foto nova, envia ela. Se não tiver e estiver editando, envia a antiga pra não apagar!
+      if (base64Logo) {
+        body.logo = base64Logo;
+      } else if (id) {
+        const p = profiles.find(x => x.id == id);
+        if (p) body.logo = p.logo;
+      }
+
+      if (id) {
+        await fetch(`/api/profiles/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+      } else {
+        await fetch('/api/profiles', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); 
+      }
+      
+      cancelarEdicaoPerfil();
+      await carregarDados(); 
+      atualizarListaPerfis();
+      btn.disabled = false;
     }
-    async function deletarPerfil(id) { if(confirm('Excluir este perfil?')) { await fetch(`/api/profiles/${id}`, { method: 'DELETE' }); fecharModalPerfil(); carregarDados(); } }
+    
+    async function deletarPerfil(id) { if(confirm('Excluir este perfil? (Isso não apaga os pedidos atrelados a ele)')) { await fetch(`/api/profiles/${id}`, { method: 'DELETE' }); await carregarDados(); atualizarListaPerfis(); } }
 
     function getStatusClass(st) {
       if (st === 'INADIMPLENTE') return 'bg-rose-900 text-white font-bold';
@@ -569,33 +608,26 @@
     // GERAÇÃO DE PDF DO ORÇAMENTO LINDÃO
     // =====================================
     function imprimirOrcamento(id) {
-      const q = quotes.find(x => x.id === id);
-      if(!q) return;
-      
+      const q = quotes.find(x => x.id === id); if(!q) return;
       const perfil = profiles.find(p => p.name === q.entity);
       
-      // Se tiver logo, carrega a imagem bonita. Se não, escreve o nome da empresa em texto grande.
       const logoHtml = (perfil && perfil.logo) 
         ? `<img src="${perfil.logo}" style="max-height: 80px; max-width: 250px; object-fit: contain;">` 
         : `<h2 style="font-size:26px; font-weight:900; color: #1e1b4b; margin:0; text-transform:uppercase;">${q.entity}</h2>`;
 
       let itensHtml = '';
       try {
-        const itens = JSON.parse(q.items);
-        itens.forEach(i => {
-          itensHtml += `
-            <tr>
+        JSON.parse(q.items).forEach(i => {
+          itensHtml += `<tr>
               <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; font-size: 14px;">${i.desc}</td>
               <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #334155; font-weight: bold;">${i.qtd}</td>
               <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #475569;">R$ ${parseFloat(i.val).toFixed(2)}</td>
               <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold; color: #0f172a;">R$ ${(i.qtd * i.val).toFixed(2)}</td>
-            </tr>
-          `;
+            </tr>`;
         });
       } catch(e) {}
 
       const dataStr = q.created_at ? q.created_at.split('-').reverse().join('/') : '-';
-
       const win = window.open('', '_blank');
       win.document.write(`
         <!DOCTYPE html>
@@ -608,84 +640,29 @@
               .header-right { text-align: right; }
               .header-right h1 { margin:0; color:#4f46e5; font-size: 32px; font-weight: 900; letter-spacing: 1px; }
               .header-right p { margin:5px 0 0 0; color:#64748b; font-size: 14px; font-weight: 600; }
-              
               .info-section { display: flex; justify-content: space-between; margin-bottom: 30px; background: #f8fafc; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; }
               .info-block h3 { margin: 0 0 8px 0; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
               .info-block p { margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; }
-              
               table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
               th { background-color: #f1f5f9; padding: 12px; text-align: left; font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #cbd5e1; }
-              
               .totals-wrapper { display: flex; justify-content: flex-end; margin-bottom: 40px; }
               .totals { width: 320px; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
               .totals-row { display: flex; justify-content: space-between; font-size: 20px; font-weight: 900; color: #4f46e5; }
-              
               .footer { font-size: 13px; color: #475569; margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 30px; }
               .footer h4 { margin: 0 0 10px 0; color: #0f172a; font-size: 14px; text-transform: uppercase; }
-              .footer p { margin: 0 0 15px 0; line-height: 1.6; }
-              
-              @media print {
-                body { margin: 0; padding: 20px; max-width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                .info-section, .totals { background-color: #f8fafc !important; }
-                th { background-color: #f1f5f9 !important; }
-              }
+              @media print { body { margin: 0; padding: 20px; max-width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .info-section, .totals { background-color: #f8fafc !important; } th { background-color: #f1f5f9 !important; } }
             </style>
           </head>
           <body>
-            <div class="header">
-              <div>${logoHtml}</div>
-              <div class="header-right">
-                <h1>ORÇAMENTO</h1>
-                <p>Emissão: ${dataStr}</p>
-              </div>
-            </div>
-            
-            <div class="info-section">
-              <div class="info-block">
-                <h3>Cliente / Destinatário</h3>
-                <p>${q.client}</p>
-              </div>
-              <div class="info-block" style="text-align: right;">
-                <h3>Condições de Pagamento</h3>
-                <p>${q.payment_terms || 'A combinar / Consultar Atendimento'}</p>
-              </div>
-            </div>
-
-            <table>
-              <thead>
-                <tr>
-                  <th>Descrição do Item</th>
-                  <th style="text-align: center;">Qtd</th>
-                  <th style="text-align: right;">V. Unitário</th>
-                  <th style="text-align: right;">Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itensHtml}
-              </tbody>
-            </table>
-
-            <div class="totals-wrapper">
-              <div class="totals">
-                <div class="totals-row">
-                  <span>TOTAL:</span>
-                  <span>R$ ${q.total_value.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="footer">
-              <h4>Observações Técnicas</h4>
-              <p>${q.notes ? q.notes.replace(/\n/g, '<br>') : 'Nenhuma anotação extra informada.'}</p>
-              <p style="text-align: center; font-size: 11px; margin-top: 40px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">Este orçamento é válido por 15 dias. Valores sujeitos a alteração após o vencimento.</p>
-            </div>
+            <div class="header"><div>${logoHtml}</div><div class="header-right"><h1>ORÇAMENTO</h1><p>Emissão: ${dataStr}</p></div></div>
+            <div class="info-section"><div class="info-block"><h3>Cliente / Destinatário</h3><p>${q.client}</p></div><div class="info-block" style="text-align: right;"><h3>Condições de Pagamento</h3><p>${q.payment_terms || 'A combinar / Consultar Atendimento'}</p></div></div>
+            <table><thead><tr><th>Descrição do Item</th><th style="text-align: center;">Qtd</th><th style="text-align: right;">V. Unitário</th><th style="text-align: right;">Subtotal</th></tr></thead><tbody>${itensHtml}</tbody></table>
+            <div class="totals-wrapper"><div class="totals"><div class="totals-row"><span>TOTAL:</span><span>R$ ${q.total_value.toFixed(2)}</span></div></div></div>
+            <div class="footer"><h4>Observações Técnicas</h4><p>${q.notes ? q.notes.replace(/\n/g, '<br>') : 'Nenhuma anotação extra informada.'}</p><p style="text-align: center; font-size: 11px; margin-top: 40px; color: #94a3b8; font-weight: bold; text-transform: uppercase;">Este orçamento é válido por 15 dias. Valores sujeitos a alteração após o vencimento.</p></div>
           </body>
         </html>
       `);
-      win.document.close();
-      win.focus();
-      // Dá meio segundo pro navegador carregar a Logo Base64 antes de invocar a tela de impressão
-      setTimeout(() => win.print(), 500); 
+      win.document.close(); win.focus(); setTimeout(() => win.print(), 500); 
     }
 
     // =====================================
@@ -774,10 +751,6 @@
     function fecharModalAtender() { document.getElementById('modal-atender').classList.add('hidden'); renderizarTelaUm(); }
     async function confirmarAtendimentoPedido() { const id = document.getElementById('atender_ped_id').value; const p = pedidos.find(x => x.id == id); if (!p) return; await fetch(`/api/orders/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ entity: p.entity, client: p.client, product: p.product, production_type: p.production_type, supplier: p.supplier||"", supplier_cost: p.supplier_cost, status_production: 'ATENDIDO', client_due_date: p.client_due_date, supplier_due_date: p.supplier_due_date, sale_value: p.sale_value, paid_by_client: (p.paid_by_client||0)+(parseFloat(document.getElementById('atender_valor_recebido').value)||0), paid_to_supplier: p.paid_to_supplier, is_recurrent: p.is_recurrent }) }); fecharModalAtender(); carregarDados(); }
 
-    // =====================================
-    // LÓGICA DE CONTAS E FLUXO (OMITIDA AQUI PARA ESPAÇO - JÁ FUNCIONAVA)
-    // =====================================
-    // Obs: Se as abas de fluxo pararem, cole as funções renderizarBills() e renderizarFluxo() do código anterior aqui no final
     function mudarAba(aba) {
       document.getElementById('sec-pedidos').classList.toggle('hidden', aba !== 'pedidos');
       document.getElementById('sec-financeiro').classList.toggle('hidden', aba !== 'financeiro');
