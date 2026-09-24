@@ -2,27 +2,22 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, Text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from typing import List, Optional
 import os
-from datetime import datetime
 
 # ==========================================
 # CONFIGURAÇÃO DO BANCO DE DADOS (SUPABASE / POSTGRESQL)
 # ==========================================
-# COLE A SUA URL DO SUPABASE AQUI (COM A SENHA):
+# COLE A SUA URL DO SUPABASE AQUI:
 MINHA_URL_SUPABASE = "postgresql://postgres:[SUA_SENHA]@db.[SEU_PROJETO].supabase.co:5432/postgres"
 
 DATABASE_URL = os.getenv("DATABASE_URL", MINHA_URL_SUPABASE)
+if DATABASE_URL.startswith("postgres://"): DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL)
+if DATABASE_URL.startswith("sqlite"): engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else: engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -79,6 +74,7 @@ class ProfileDB(Base):
     __tablename__ = "profiles"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
+    logo = Column(Text, nullable=True) # <-- CAMPO DA LOGO AQUI
 
 class CardDB(Base):
     __tablename__ = "cards"
@@ -156,6 +152,7 @@ class QuoteStatusSchema(BaseModel):
 
 class ProfileSchema(BaseModel):
     name: str
+    logo: Optional[str] = None # <-- CAMPO DA LOGO AQUI
 
 class CardSchema(BaseModel):
     name: str
@@ -171,16 +168,13 @@ app = FastAPI(title="ERP Unificado API")
 
 def get_db():
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    try: yield db
+    finally: db.close()
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
     template_path = os.path.join(os.path.dirname(__file__), "templates", "index.html")
-    with open(template_path, "r", encoding="utf-8") as file:
-        return file.read()
+    with open(template_path, "r", encoding="utf-8") as file: return file.read()
 
 @app.get("/api/settings/balance")
 def get_balance():
@@ -209,7 +203,7 @@ def get_profiles():
 @app.post("/api/profiles")
 def create_profile(profile: ProfileSchema):
     db = SessionLocal()
-    db.add(ProfileDB(name=profile.name))
+    db.add(ProfileDB(name=profile.name, logo=profile.logo))
     db.commit()
     db.close()
     return {"success": True}
@@ -347,8 +341,7 @@ def update_bill(id: int, update: BillUpdateSchema):
 def delete_bill(id: int, mode: str = Query("SINGLE")):
     db = SessionLocal()
     db_bill = db.query(BillDB).filter(BillDB.id == id).first()
-    if mode == "SINGLE" or not db_bill.group_id:
-        db.delete(db_bill)
+    if mode == "SINGLE" or not db_bill.group_id: db.delete(db_bill)
     else:
         query = db.query(BillDB).filter(BillDB.group_id == db_bill.group_id)
         if mode == "FUTURE": query = query.filter(BillDB.installment_number >= db_bill.installment_number)
@@ -357,7 +350,6 @@ def delete_bill(id: int, mode: str = Query("SINGLE")):
     db.close()
     return {"success": True}
 
-# ROTAS DE ORÇAMENTOS
 @app.get("/api/quotes")
 def get_quotes():
     db = SessionLocal()
