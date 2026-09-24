@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ERP Unificado - Pedidos, Financeiro & Caixa</title>
-  
-  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#2563eb">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -27,7 +25,7 @@
       </div>
       <div class="flex items-center gap-2">
         <button onclick="abrirModalPerfil()" class="bg-slate-100 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold">
-          <i class="fa-solid fa-users"></i> Perfis e Logos
+          <i class="fa-solid fa-users"></i> Perfis
         </button>
         <button onclick="abrirModalCartao()" class="bg-purple-100 text-purple-700 px-3 py-2 rounded-lg text-xs font-semibold">
           <i class="fa-solid fa-credit-card"></i> Cartões
@@ -78,7 +76,7 @@
 
       <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3">
         <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
-          <button onclick="mudarSubAbaPedidos('orcamentos')" id="subtab-orcamentos" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition flex items-center gap-1"><i class="fa-solid fa-file-invoice"></i> Orçamentos (<span id="count-orcamentos">0</span>)</button>
+          <button onclick="mudarSubAbaPedidos('orcamentos')" id="subtab-orcamentos" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition flex items-center gap-1">Orçamentos (<span id="count-orcamentos">0</span>)</button>
           <button onclick="mudarSubAbaPedidos('ativos')" id="subtab-ativos" class="px-3 py-2 rounded-md text-xs font-bold subtab-active transition">Em Andamento (<span id="count-ativos">0</span>)</button>
           <button onclick="mudarSubAbaPedidos('atendidos')" id="subtab-atendidos" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition">Atendidos (<span id="count-atendidos">0</span>)</button>
           <button onclick="mudarSubAbaPedidos('inadimplentes')" id="subtab-inadimplentes" class="px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition">Inadimplentes (<span id="count-inadimplentes">0</span>)</button>
@@ -174,181 +172,107 @@
 
   </main>
 
-  <!-- MODAL: PERFIS E LOGOS -->
+  <!-- MODALS GERAIS (Perfil, Orçamento, Pedido, Atender, Bill, Cartão, Delete Bill) -->
   <div id="modal-perfil" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
-        <h3 class="font-bold text-base">Perfis e Logos</h3>
-        <button onclick="fecharModalPerfil()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center"><h3 class="font-bold text-base">Perfis e Logos</h3><button onclick="fecharModalPerfil()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
       <div class="p-6 space-y-4">
         <form onsubmit="salvarPerfil(event)" class="bg-slate-50 p-4 border border-slate-200 rounded-lg space-y-3">
-          <div class="flex justify-between items-center mb-1">
-            <p class="text-xs text-slate-500 font-bold uppercase" id="titulo-form-perfil">Novo Perfil / Empresa</p>
-            <button type="button" onclick="cancelarEdicaoPerfil()" id="btn-cancelar-edicao" class="text-xs text-blue-600 hidden hover:text-blue-800 font-bold">Cancelar Edição</button>
-          </div>
+          <div class="flex justify-between items-center mb-1"><p class="text-xs text-slate-500 font-bold uppercase" id="titulo-form-perfil">Novo Perfil / Empresa</p><button type="button" onclick="cancelarEdicaoPerfil()" id="btn-cancelar-edicao" class="text-xs text-blue-600 hidden hover:text-blue-800 font-bold">Cancelar</button></div>
           <input type="hidden" id="novo_perfil_id" value="">
           <input type="text" id="novo_perfil_nome" required placeholder="Nome (Ex: Cavernatec)" class="w-full p-2 border border-slate-300 rounded text-sm">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Logo da Empresa (Aparece no PDF)</label>
-            <input type="file" id="novo_perfil_logo" accept="image/*" class="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-            <p id="msg_logo_existente" class="text-[10px] text-slate-400 mt-1 hidden">Deixe em branco para manter a logo atual.</p>
-          </div>
-          <button type="submit" id="btn-salvar-perfil" class="w-full bg-blue-600 text-white px-3 py-2 rounded text-xs font-semibold hover:bg-blue-700">Cadastrar Perfil</button>
+          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Logo da Empresa</label><input type="file" id="novo_perfil_logo" accept="image/*" class="w-full text-xs text-slate-600"><p id="msg_logo_existente" class="text-[10px] text-slate-400 mt-1 hidden">Deixe em branco para manter a logo atual.</p></div>
+          <button type="submit" id="btn-salvar-perfil" class="w-full bg-blue-600 text-white px-3 py-2 rounded text-xs font-semibold hover:bg-blue-700">Salvar</button>
         </form>
         <ul id="lista-perfis" class="divide-y text-sm max-h-48 overflow-y-auto"></ul>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: NOVO ORÇAMENTO -->
   <div id="modal-orcamento" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
-        <h3 id="modal-orcamento-titulo" class="font-bold text-base"><i class="fa-solid fa-file-invoice-dollar mr-2"></i> Criar Orçamento</h3>
-        <button onclick="fecharModalOrcamento()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
+      <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center"><h3 class="font-bold text-base">Criar Orçamento</h3><button onclick="fecharModalOrcamento()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <form onsubmit="salvarOrcamento(event)" class="flex-1 overflow-y-auto p-6 space-y-4 text-sm">
         <input type="hidden" id="orc_id" value="">
-        <div class="grid grid-cols-2 gap-4">
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label><input type="text" id="orc_client" required placeholder="Nome do Cliente" class="w-full p-2 border rounded"></div>
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Perfil/Empresa da Emissão *</label><select id="orc_entity" required class="w-full p-2 border rounded bg-white"></select></div>
-        </div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label><input type="text" id="orc_client" required class="w-full p-2 border rounded"></div><div><label class="block text-xs font-semibold text-slate-600 mb-1">Empresa *</label><select id="orc_entity" required class="w-full p-2 border rounded bg-white"></select></div></div>
         <div class="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
-          <div class="bg-slate-100 px-4 py-2 border-b flex justify-between items-center">
-            <h4 class="text-xs font-bold text-slate-700 uppercase">Itens do Orçamento</h4>
-            <button type="button" onclick="adicionarLinhaProduto()" class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold hover:bg-indigo-200"><i class="fa-solid fa-plus"></i> Linha</button>
-          </div>
+          <div class="bg-slate-100 px-4 py-2 border-b flex justify-between items-center"><h4 class="text-xs font-bold text-slate-700 uppercase">Itens</h4><button type="button" onclick="adicionarLinhaProduto()" class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold">Nova Linha</button></div>
           <table class="w-full text-left text-xs">
-            <thead class="bg-white border-b text-slate-500 uppercase">
-              <tr><th class="p-2 w-1/2">Descrição Produto/Serviço</th><th class="p-2 w-16 text-center">Qtd</th><th class="p-2 w-24">Val. Unit</th><th class="p-2 w-24 text-right">Total</th><th class="p-2 w-10 text-center">X</th></tr>
-            </thead>
+            <thead class="bg-white border-b text-slate-500 uppercase"><tr><th class="p-2 w-1/2">Produto/Serviço</th><th class="p-2 w-16 text-center">Qtd</th><th class="p-2 w-24">Unit</th><th class="p-2 w-24 text-right">Total</th><th class="p-2 w-10 text-center">X</th></tr></thead>
             <tbody id="linhas-produtos-orcamento" class="divide-y divide-slate-100 bg-white"></tbody>
-            <tfoot class="bg-indigo-50 font-bold border-t border-indigo-100 text-sm text-indigo-900">
-              <tr><td colspan="3" class="p-2 text-right">VALOR TOTAL DO ORÇAMENTO:</td><td class="p-2 text-right" id="orc_total_display">R$ 0,00</td><td></td></tr>
-            </tfoot>
+            <tfoot class="bg-indigo-50 font-bold border-t border-indigo-100 text-sm text-indigo-900"><tr><td colspan="3" class="p-2 text-right">TOTAL:</td><td class="p-2 text-right" id="orc_total_display">R$ 0,00</td><td></td></tr></tfoot>
           </table>
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Condições de Pagamento</label><input type="text" id="orc_payment_terms" placeholder="Ex: 50% Entrada, 50% na Entrega" class="w-full p-2 border rounded"></div>
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Data Emissão</label><input type="date" id="orc_created_at" class="w-full p-2 border rounded text-slate-500"></div>
-        </div>
-        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Observações / Anotações Gerais</label><textarea id="orc_notes" rows="2" class="w-full p-2 border rounded" placeholder="Informações de prazo, material, validade do orçamento..."></textarea></div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-semibold text-slate-600 mb-1">Condições Pgto</label><input type="text" id="orc_payment_terms" class="w-full p-2 border rounded"></div><div><label class="block text-xs font-semibold text-slate-600 mb-1">Data</label><input type="date" id="orc_created_at" class="w-full p-2 border rounded"></div></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Observações</label><textarea id="orc_notes" rows="2" class="w-full p-2 border rounded"></textarea></div>
       </form>
       <div class="bg-slate-50 px-6 py-4 border-t flex justify-between items-center">
-        <span class="text-xs text-slate-500" id="orc_status_badge">Orçamento</span>
-        <div class="flex gap-2">
-          <button type="button" onclick="fecharModalOrcamento()" class="px-4 py-2 border rounded text-xs font-bold text-slate-600 bg-white">Cancelar</button>
-          <button type="button" onclick="document.querySelector('#modal-orcamento form').dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))" id="btn-save-orcamento" class="px-4 py-2 bg-indigo-600 text-white rounded text-xs font-bold">Salvar Orçamento</button>
-        </div>
+        <span class="text-xs text-slate-500">Orçamento</span>
+        <div class="flex gap-2"><button type="button" onclick="fecharModalOrcamento()" class="px-4 py-2 border rounded text-xs font-bold">Cancelar</button><button type="button" onclick="document.querySelector('#modal-orcamento form').dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}))" class="px-4 py-2 bg-indigo-600 text-white rounded text-xs font-bold">Salvar</button></div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL ADICIONAR / EDITAR PEDIDO -->
   <div id="modal-pedido" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
-      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center"><h3 id="modal-pedido-titulo" class="font-bold text-base">Novo Pedido</h3><button onclick="fecharModalPedido()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center"><h3 class="font-bold text-base">Novo Pedido</h3><button onclick="fecharModalPedido()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <form onsubmit="salvarPedido(event)" class="p-6 space-y-3 text-sm max-h-[80vh] overflow-y-auto">
-        <input type="hidden" id="ped_id" value="">
-        <input type="hidden" id="ped_quote_id_origin" value="">
+        <input type="hidden" id="ped_id" value=""><input type="hidden" id="ped_quote_id_origin" value="">
         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Cliente *</label><input type="text" id="ped_client" required class="w-full p-2 border rounded"></div>
         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Produto(s) *</label><textarea id="ped_product" required rows="2" class="w-full p-2 border rounded"></textarea></div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Empresa/Perfil *</label><select id="ped_entity" required class="w-full p-2 border rounded bg-white"></select></div>
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Produção *</label><select id="ped_production_type" required class="w-full p-2 border rounded bg-white"><option value="PROPRIA">Própria</option><option value="TERCEIRO">Terceirizada</option></select></div>
-        </div>
-        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Status Inicial *</label>
-          <select id="ped_status_production" required class="w-full p-2 border rounded bg-white font-bold text-sm text-indigo-700">
-            <option value="AGUARDANDO PAGAMENTO DA ENTRADA">AGUARDANDO PAGTO ENTRADA</option>
-            <option value="EM PRODUÇÃO" selected>EM PRODUÇÃO</option>
-            <option value="AGUARDANDO RETIRADA OU ENTREGA">AGUARDANDO RETIRADA/ENTREGA</option>
-            <option value="AGUARDANDO PAGAMENTO FINAL">AGUARDANDO PAGTO FINAL</option>
-          </select>
-        </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center space-x-3"><input type="checkbox" id="ped_is_recurrent" class="w-4 h-4 text-blue-600 rounded"><label for="ped_is_recurrent" class="text-xs font-bold text-blue-900 cursor-pointer">Contrato Recorrente (Mensal)</label></div>
-        <div class="p-3 bg-blue-50/50 border border-blue-100 rounded-lg grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-semibold text-blue-900 mb-1">Valor Venda Total (R$)</label><input type="number" step="0.01" id="ped_sale_value" value="0.00" class="w-full p-2 border rounded font-bold text-blue-900"></div>
-          <div><label class="block text-xs font-semibold text-blue-900 mb-1">Já Pago p/ Cliente (Entrada)</label><input type="number" step="0.01" id="ped_paid_by_client" value="0.00" class="w-full p-2 border rounded"></div>
-        </div>
-        <div class="p-3 bg-purple-50/50 border border-purple-100 rounded-lg space-y-2">
-          <div><label class="block text-xs font-semibold text-purple-900 mb-1">Nome Fornecedor (Opcional)</label><input type="text" id="ped_supplier" class="w-full p-2 border rounded"></div>
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="block text-xs font-semibold text-purple-900 mb-1">Custo Fornec. (R$)</label><input type="number" step="0.01" id="ped_supplier_cost" value="0.00" class="w-full p-2 border rounded"></div>
-            <div><label class="block text-xs font-semibold text-purple-900 mb-1">Já Pago ao Fornec.</label><input type="number" step="0.01" id="ped_paid_to_supplier" value="0.00" class="w-full p-2 border rounded"></div>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Venc. Recebimento</label><input type="date" id="ped_client_due_date" required class="w-full p-2 border rounded"></div>
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Venc. Fornecedor</label><input type="date" id="ped_supplier_due_date" class="w-full p-2 border rounded"></div>
-        </div>
-        <div class="flex justify-end gap-2 pt-3 border-t"><button type="button" onclick="fecharModalPedido()" class="px-4 py-2 border rounded text-xs">Cancelar</button><button type="submit" id="btn-save-order" class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-semibold">Salvar Pedido</button></div>
+        <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold text-slate-600 mb-1">Empresa *</label><select id="ped_entity" required class="w-full p-2 border rounded bg-white"></select></div><div><label class="block text-xs font-semibold text-slate-600 mb-1">Produção *</label><select id="ped_production_type" required class="w-full p-2 border rounded bg-white"><option value="PROPRIA">Própria</option><option value="TERCEIRO">Terceirizada</option></select></div></div>
+        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Status Inicial *</label><select id="ped_status_production" required class="w-full p-2 border rounded bg-white font-bold"><option value="AGUARDANDO PAGAMENTO DA ENTRADA">AGUARD. ENTRADA</option><option value="EM PRODUÇÃO" selected>EM PRODUÇÃO</option><option value="AGUARDANDO RETIRADA OU ENTREGA">AGUARD. RETIRADA/ENTREGA</option><option value="AGUARDANDO PAGAMENTO FINAL">AGUARD. PAGTO FINAL</option></select></div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center space-x-3"><input type="checkbox" id="ped_is_recurrent" class="w-4 h-4"><label for="ped_is_recurrent" class="text-xs font-bold text-blue-900 cursor-pointer">Recorrente (Mensal)</label></div>
+        <div class="p-3 bg-blue-50/50 border border-blue-100 rounded-lg grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold mb-1">Venda Total (R$)</label><input type="number" step="0.01" id="ped_sale_value" value="0.00" class="w-full p-2 border rounded font-bold"></div><div><label class="block text-xs font-semibold mb-1">Pago Cliente</label><input type="number" step="0.01" id="ped_paid_by_client" value="0.00" class="w-full p-2 border rounded"></div></div>
+        <div class="p-3 bg-purple-50/50 border border-purple-100 rounded-lg space-y-2"><div><label class="block text-xs font-semibold mb-1">Fornecedor</label><input type="text" id="ped_supplier" class="w-full p-2 border rounded"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold mb-1">Custo (R$)</label><input type="number" step="0.01" id="ped_supplier_cost" value="0.00" class="w-full p-2 border rounded"></div><div><label class="block text-xs font-semibold mb-1">Pago Fornec.</label><input type="number" step="0.01" id="ped_paid_to_supplier" value="0.00" class="w-full p-2 border rounded"></div></div></div>
+        <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold mb-1">Venc. Recebimento</label><input type="date" id="ped_client_due_date" required class="w-full p-2 border rounded"></div><div><label class="block text-xs font-semibold mb-1">Venc. Fornecedor</label><input type="date" id="ped_supplier_due_date" class="w-full p-2 border rounded"></div></div>
+        <div class="flex justify-end gap-2 pt-3 border-t"><button type="button" onclick="fecharModalPedido()" class="px-4 py-2 border rounded text-xs">Cancelar</button><button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-semibold">Salvar</button></div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL ATENDER PEDIDO -->
   <div id="modal-atender" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 space-y-4">
-      <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-600"></i> Atender Pedido</h3>
-      <p id="atender-texto-cliente" class="text-xs text-slate-600 leading-relaxed">Confirma o atendimento deste pedido?</p>
+      <h3 class="font-bold text-slate-800 text-base">Atender Pedido</h3>
       <input type="hidden" id="atender_ped_id" value="">
-      <div><label class="block text-xs font-semibold text-slate-700 mb-1">Valor Recebido do Cliente (R$)</label><input type="number" step="0.01" id="atender_valor_recebido" class="w-full p-2 border rounded font-bold text-emerald-700 text-sm"></div>
-      <div class="flex justify-end gap-2 pt-2 border-t"><button type="button" onclick="fecharModalAtender()" class="px-3 py-2 border rounded text-xs">Cancelar</button><button type="button" onclick="confirmarAtendimentoPedido()" class="px-4 py-2 bg-emerald-600 text-white rounded text-xs font-semibold">Confirmar e Atender</button></div>
+      <div><label class="block text-xs font-semibold mb-1">Valor Recebido (R$)</label><input type="number" step="0.01" id="atender_valor_recebido" class="w-full p-2 border rounded font-bold"></div>
+      <div class="flex justify-end gap-2 pt-2 border-t"><button type="button" onclick="fecharModalAtender()" class="px-3 py-2 border rounded text-xs">Cancelar</button><button type="button" onclick="confirmarAtendimentoPedido()" class="px-4 py-2 bg-emerald-600 text-white rounded text-xs font-semibold">Confirmar</button></div>
     </div>
   </div>
 
-  <!-- MODAL CONTAS E CARTOES -->
   <div id="modal-bill" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center"><h3 id="modal-bill-titulo" class="font-bold text-base">Nova Conta / Lançamento</h3><button onclick="fecharModalBill()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center"><h3 class="font-bold text-base">Nova Conta</h3><button onclick="fecharModalBill()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <form onsubmit="salvarBill(event)" class="p-6 space-y-3 text-sm">
         <input type="hidden" id="bill_id" value="">
-        <div id="box-edit-mode" class="hidden bg-amber-50 p-3 border border-amber-200 rounded-lg text-xs space-y-1"><label class="block font-bold text-amber-900">Aplicar alterações em:</label><div class="space-y-1 text-slate-700"><label class="flex items-center gap-1.5"><input type="radio" name="edit_mode" value="SINGLE" checked> Somente esta parcela</label><label class="flex items-center gap-1.5"><input type="radio" name="edit_mode" value="FUTURE"> Esta e as próximas parcelas</label><label class="flex items-center gap-1.5"><input type="radio" name="edit_mode" value="ALL"> Todas as parcelas da compra</label></div></div>
-        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Credor / Descrição *</label><input type="text" id="bill_creditor" required class="w-full p-2 border rounded"></div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Perfil / Usuário *</label><select id="bill_entity" required class="w-full p-2 border rounded bg-white"></select></div>
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Cartão (Opcional)</label><select id="bill_card_id" class="w-full p-2 border rounded bg-white"><option value="">Sem Cartão</option></select></div>
-        </div>
-        <div id="box-recurrent-option" class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center space-x-3 mt-2"><input type="checkbox" id="bill_is_recurrent" onchange="toggleRecurrent()" class="w-4 h-4 text-emerald-600 rounded border-gray-300"><div><label for="bill_is_recurrent" class="text-xs font-bold text-amber-900">Despesa Recorrente</label></div></div>
-        <div class="grid grid-cols-2 gap-3 mt-2">
-          <div><label id="lbl_bill_installment" class="block text-xs font-semibold text-slate-600 mb-1">Valor Parcela (R$) *</label><input type="number" step="0.01" id="bill_installment_amount" required oninput="calcTotal()" class="w-full p-2 border rounded font-bold"></div>
-          <div id="box_installments"><label class="block text-xs font-semibold text-slate-600 mb-1">Nº Parcelas *</label><input type="number" min="1" id="bill_total_installments" value="1" required oninput="calcTotal()" class="w-full p-2 border rounded"></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label id="lbl_bill_total" class="block text-xs font-semibold text-slate-600 mb-1">Valor Total (R$)</label><input type="number" step="0.01" id="bill_total_amount" readonly class="w-full p-2 border rounded bg-slate-100 font-medium"></div>
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Vencimento *</label><input type="date" id="bill_due_date" required class="w-full p-2 border rounded"></div>
-        </div>
-        <div class="flex justify-end gap-2 pt-3 border-t"><button type="button" onclick="fecharModalBill()" class="px-4 py-2 border rounded text-xs">Cancelar</button><button type="submit" id="btn-save-bill" class="px-4 py-2 bg-rose-600 text-white rounded text-xs font-semibold">Salvar</button></div>
+        <div id="box-edit-mode" class="hidden bg-amber-50 p-3 border border-amber-200 rounded-lg text-xs space-y-1"><label class="block font-bold">Alterar em:</label><div class="space-y-1"><label><input type="radio" name="edit_mode" value="SINGLE" checked> Somente esta</label><label><input type="radio" name="edit_mode" value="FUTURE"> Esta e próximas</label><label><input type="radio" name="edit_mode" value="ALL"> Todas</label></div></div>
+        <div><label class="block text-xs font-semibold mb-1">Credor/Descrição *</label><input type="text" id="bill_creditor" required class="w-full p-2 border rounded"></div>
+        <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold mb-1">Perfil *</label><select id="bill_entity" required class="w-full p-2 border rounded"></select></div><div><label class="block text-xs font-semibold mb-1">Cartão</label><select id="bill_card_id" class="w-full p-2 border rounded"><option value="">Sem Cartão</option></select></div></div>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center space-x-3 mt-2"><input type="checkbox" id="bill_is_recurrent" onchange="toggleRecurrent()"><label class="text-xs font-bold text-amber-900">Recorrente</label></div>
+        <div class="grid grid-cols-2 gap-3 mt-2"><div><label id="lbl_bill_installment" class="block text-xs font-semibold mb-1">Parcela (R$) *</label><input type="number" step="0.01" id="bill_installment_amount" required oninput="calcTotal()" class="w-full p-2 border rounded font-bold"></div><div id="box_installments"><label class="block text-xs font-semibold mb-1">Nº Parcelas</label><input type="number" min="1" id="bill_total_installments" value="1" required oninput="calcTotal()" class="w-full p-2 border rounded"></div></div>
+        <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold mb-1">Total (R$)</label><input type="number" step="0.01" id="bill_total_amount" readonly class="w-full p-2 border rounded bg-slate-100"></div><div><label class="block text-xs font-semibold mb-1">Vencimento *</label><input type="date" id="bill_due_date" required class="w-full p-2 border rounded"></div></div>
+        <div class="flex justify-end gap-2 pt-3 border-t"><button type="button" onclick="fecharModalBill()" class="px-4 py-2 border rounded text-xs">Cancelar</button><button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded text-xs font-semibold">Salvar</button></div>
       </form>
     </div>
   </div>
 
   <div id="modal-cartao" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center"><h3 id="modal-cartao-titulo" class="font-bold text-base">Cartão de Crédito</h3><button onclick="fecharModalCartao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+      <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center"><h3 class="font-bold text-base">Cartão</h3><button onclick="fecharModalCartao()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <form onsubmit="salvarCartao(event)" class="p-6 space-y-3 text-sm">
         <input type="hidden" id="card_id" value="">
-        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Cartão *</label><input type="text" id="card_name" required class="w-full p-2 border rounded"></div>
-        <div><label class="block text-xs font-semibold text-slate-600 mb-1">Perfil *</label><select id="card_entity" required class="w-full p-2 border rounded bg-white"></select></div>
-        <div class="grid grid-cols-3 gap-2">
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Limite</label><input type="number" step="0.01" id="card_limit" required class="w-full p-2 border rounded"></div>
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Dia Fech.</label><input type="number" min="1" max="31" id="card_closing" required class="w-full p-2 border rounded"></div>
-          <div><label class="block text-xs font-semibold text-slate-600 mb-1">Dia Venc.</label><input type="number" min="1" max="31" id="card_due" required class="w-full p-2 border rounded"></div>
-        </div>
-        <div class="flex justify-end gap-2 pt-3 border-t"><button type="button" onclick="fecharModalCartao()" class="px-4 py-2 border rounded text-xs">Cancelar</button><button type="submit" id="btn-save-card" class="px-4 py-2 bg-purple-600 text-white rounded text-xs font-semibold">Salvar</button></div>
+        <div><label class="block text-xs font-semibold mb-1">Nome *</label><input type="text" id="card_name" required class="w-full p-2 border rounded"></div>
+        <div><label class="block text-xs font-semibold mb-1">Perfil *</label><select id="card_entity" required class="w-full p-2 border rounded"></select></div>
+        <div class="grid grid-cols-3 gap-2"><div><label class="block text-xs font-semibold mb-1">Limite</label><input type="number" step="0.01" id="card_limit" required class="w-full p-2 border rounded"></div><div><label class="block text-xs font-semibold mb-1">Fech.</label><input type="number" min="1" max="31" id="card_closing" required class="w-full p-2 border rounded"></div><div><label class="block text-xs font-semibold mb-1">Venc.</label><input type="number" min="1" max="31" id="card_due" required class="w-full p-2 border rounded"></div></div>
+        <div class="flex justify-end gap-2 pt-3 border-t"><button type="button" onclick="fecharModalCartao()" class="px-4 py-2 border rounded text-xs">Cancelar</button><button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded text-xs font-semibold">Salvar</button></div>
       </form>
     </div>
   </div>
 
   <div id="modal-delete-bill" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 space-y-4">
-      <h3 class="font-bold text-slate-800 text-base flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Excluir Parcela</h3>
-      <div class="space-y-2 pt-2">
-        <button onclick="confirmarExclusaoBill('SINGLE')" class="w-full p-2.5 bg-slate-100 rounded-lg text-xs font-bold text-left">Excluir SOMENTE esta parcela</button>
-        <button onclick="confirmarExclusaoBill('FUTURE')" class="w-full p-2.5 bg-amber-50 rounded-lg text-xs font-bold text-left">Excluir ESTA E AS PRÓXIMAS</button>
-        <button onclick="confirmarExclusaoBill('ALL')" class="w-full p-2.5 bg-rose-50 rounded-lg text-xs font-bold text-left">Excluir TODAS as parcelas</button>
-      </div>
+      <h3 class="font-bold text-slate-800 text-base">Excluir Parcela</h3>
+      <div class="space-y-2 pt-2"><button onclick="confirmarExclusaoBill('SINGLE')" class="w-full p-2 bg-slate-100 rounded text-xs font-bold text-left">SOMENTE esta</button><button onclick="confirmarExclusaoBill('FUTURE')" class="w-full p-2 bg-amber-50 rounded text-xs font-bold text-left">ESTA E PRÓXIMAS</button><button onclick="confirmarExclusaoBill('ALL')" class="w-full p-2 bg-rose-50 rounded text-xs font-bold text-left">TODAS</button></div>
       <div class="pt-2 text-right"><button onclick="fecharModalDeleteBill()" class="text-xs text-slate-500 font-semibold px-3 py-1">Cancelar</button></div>
     </div>
   </div>
@@ -400,18 +324,12 @@
       if(selFin){ selFin.innerHTML='<option value="ALL">TODOS OS PERFIS</option>'; profiles.forEach(p=>selFin.innerHTML+=`<option value="${p.name}">${p.name}</option>`); selFin.value=valFin; }
     }
 
-    // =====================================
-    // LÓGICA DE PERFIS E LOGOS
-    // =====================================
     function abrirModalPerfil() { cancelarEdicaoPerfil(); atualizarListaPerfis(); document.getElementById('modal-perfil').classList.remove('hidden'); }
     function atualizarListaPerfis() {
       const lista = document.getElementById('lista-perfis'); lista.innerHTML = '';
       profiles.forEach(p => { 
         const thumb = p.logo ? `<img src="${p.logo}" class="h-6 w-6 object-contain rounded mr-2 border bg-white">` : `<div class="h-6 w-6 bg-slate-200 rounded mr-2 flex items-center justify-center text-[10px] text-slate-400"><i class="fa-solid fa-image"></i></div>`;
-        lista.innerHTML += `<li class="py-2 flex justify-between items-center border-b">
-          <div class="flex items-center">${thumb} <span class="font-bold">${p.name}</span></div>
-          <div class="flex gap-2"><button onclick="editarPerfil(${p.id})" class="text-xs text-blue-600 px-2 py-1"><i class="fa-solid fa-pen"></i></button><button onclick="deletarPerfil(${p.id})" class="text-xs text-rose-600 px-2 py-1"><i class="fa-solid fa-trash"></i></button></div>
-        </li>`; 
+        lista.innerHTML += `<li class="py-2 flex justify-between items-center border-b"><div class="flex items-center">${thumb} <span class="font-bold">${p.name}</span></div><div class="flex gap-2"><button onclick="editarPerfil(${p.id})" class="text-xs text-blue-600 px-2 py-1"><i class="fa-solid fa-pen"></i></button><button onclick="deletarPerfil(${p.id})" class="text-xs text-rose-600 px-2 py-1"><i class="fa-solid fa-trash"></i></button></div></li>`; 
       });
     }
     function editarPerfil(id) {
@@ -427,72 +345,196 @@
     }
     function fecharModalPerfil() { document.getElementById('modal-perfil').classList.add('hidden'); }
     async function salvarPerfil(e) { 
-      e.preventDefault(); const btn = document.getElementById('btn-salvar-perfil'); btn.innerText = "Salvando..."; btn.disabled = true;
+      e.preventDefault(); const btn = document.getElementById('btn-salvar-perfil'); btn.disabled = true;
       const fileInput = document.getElementById('novo_perfil_logo'); let base64Logo = null;
       if (fileInput.files.length > 0) { const file = fileInput.files[0]; base64Logo = await new Promise((resolve) => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.readAsDataURL(file); }); }
       const id = document.getElementById('novo_perfil_id').value; const body = { name: document.getElementById('novo_perfil_nome').value };
       if (base64Logo) body.logo = base64Logo; else if (id) { const p = profiles.find(x => x.id == id); if (p) body.logo = p.logo; }
-      if (id) await fetch(`/api/profiles/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
-      else await fetch('/api/profiles', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); 
+      if (id) await fetch(`/api/profiles/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); else await fetch('/api/profiles', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); 
       cancelarEdicaoPerfil(); await carregarDados(); atualizarListaPerfis(); btn.disabled = false;
     }
-    async function deletarPerfil(id) { if(confirm('Excluir este perfil? (Isso não apaga os pedidos atrelados a ele)')) { await fetch(`/api/profiles/${id}`, { method: 'DELETE' }); await carregarDados(); atualizarListaPerfis(); } }
+    async function deletarPerfil(id) { if(confirm('Excluir perfil?')) { await fetch(`/api/profiles/${id}`, { method: 'DELETE' }); await carregarDados(); atualizarListaPerfis(); } }
 
     function getStatusClass(st) {
       if (st === 'INADIMPLENTE') return 'bg-rose-900 text-white font-bold';
       if (st === 'ATENDIDO') return 'bg-emerald-900 text-white font-bold';
       if (st.includes('AGUARDANDO PAGAMENTO')) return 'bg-rose-100 text-rose-800 font-bold';
       if (st === 'EM PRODUÇÃO') return 'bg-amber-100 text-amber-800 font-bold';
-      if (st === 'AGUARDANDO RETIRADA OU ENTREGA') return 'bg-blue-100 text-blue-800 font-bold';
+      if (st === 'AGUARDANDO RETIRADA') return 'bg-blue-100 text-blue-800 font-bold';
       return 'bg-slate-100 text-slate-800';
     }
 
     function mudarSubAbaPedidos(sub) {
       subAbaPedidosAtual = sub; const ids = ['orcamentos', 'ativos', 'atendidos', 'inadimplentes'];
-      ids.forEach(id => { const btn = document.getElementById(`subtab-${id}`); btn.className = `px-3 py-2 rounded-md text-xs font-bold transition ${id===sub?'subtab-active':'text-slate-600 hover:bg-white'}${id==='orcamentos'?'flex items-center gap-1':''}`; });
+      ids.forEach(id => { const btn = document.getElementById(`subtab-${id}`); btn.className = `px-3 py-2 rounded-md text-xs font-bold transition ${id===sub?'subtab-active':'text-slate-600 hover:bg-white'}`; });
       renderizarTelaUm();
     }
 
-    // =====================================
-    // RENDERIZAÇÃO ABA 1 (PEDIDOS E ORÇAMENTOS)
-    // =====================================
     function renderizarTelaUm() {
       const container = document.getElementById('tabela-container'); const mesSel = document.getElementById('filtro-mes-pedidos')?.value || ''; const termo = (document.getElementById('busca-pedido')?.value || '').toLowerCase();
       document.getElementById('count-orcamentos').innerText = quotes.filter(q => q.status === 'PENDENTE').length;
 
       if(subAbaPedidosAtual === 'orcamentos') {
         document.getElementById('cards-pedidos').classList.add('hidden');
-        let html = `<thead class="bg-indigo-50 border-b text-xs uppercase text-indigo-900"><tr><th class="p-3">Data / Cliente</th><th class="p-3">Itens e Valores</th><th class="p-3">Condições</th><th class="p-3 text-right">Total</th><th class="p-3 text-center">Ações</th></tr></thead><tbody class="divide-y divide-slate-100">`;
+        let html = `<thead class="bg-indigo-50 border-b text-xs uppercase text-indigo-900"><tr><th class="p-3">Data / Cliente</th><th class="p-3">Itens</th><th class="p-3">Condições</th><th class="p-3 text-right">Total</th><th class="p-3 text-center">Ações</th></tr></thead><tbody class="divide-y divide-slate-100">`;
         const pendingQuotes = quotes.filter(q => q.status === 'PENDENTE' && q.client.toLowerCase().includes(termo));
-        if(pendingQuotes.length === 0) html += `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum orçamento em aberto.</td></tr>`;
+        if(pendingQuotes.length === 0) html += `<tr><td colspan="5" class="p-4 text-center text-slate-400">Vazio.</td></tr>`;
         else {
           pendingQuotes.forEach(q => {
-            let itemsHTML = ''; try { JSON.parse(q.items).forEach(i => itemsHTML += `<div class="text-[10px] text-slate-600">- ${i.qtd}x${i.desc} (R$ ${parseFloat(i.val).toFixed(2)})</div>`); } catch(e){}
-            html += `<tr><td class="p-3 font-bold"><div class="text-[10px] text-slate-500 font-normal mb-0.5">${q.created_at ? q.created_at.split('-').reverse().join('/') : '-'}</div>${q.client}<div class="text-[10px] text-indigo-600 uppercase mt-0.5">${q.entity}</div></td><td class="p-3">${itemsHTML}</td><td class="p-3 text-xs text-slate-600"><span class="font-bold block text-slate-700 mb-1">Pgto: ${q.payment_terms \vert{}\vert{} '-'}</span>${q.notes || ''}</td><td class="p-3 text-right font-black text-indigo-700">R$ ${q.total_valuePara deixar o layout do "Orçamento_RZK_-_AGRO.pdf" mais compacto e garantir que caibam muito mais itens em uma única página, o foco deve ser eliminar as quebras de linha desnecessárias e agrupar as informações de cabeçalho e rodapé. 
+            let itemsHTML = ''; try { JSON.parse(q.items).forEach(i => itemsHTML += `<div class="text-[10px] text-slate-600">- ${i.qtd}x ${i.desc}</div>`); } catch(e){}
+            html += `<tr><td class="p-3 font-bold"><div class="text-[10px] text-slate-500 font-normal mb-0.5">${q.created_at ? q.created_at.split('-').reverse().join('/') : '-'}</div>${q.client}<div class="text-[10px] text-indigo-600 uppercase mt-0.5">${q.entity}</div></td><td class="p-3">${itemsHTML}</td><td class="p-3 text-xs text-slate-600"><span class="font-bold block text-slate-700">Pgto: ${q.payment_terms || '-'}</span></td><td class="p-3 text-right font-black text-indigo-700">R$ ${q.total_value.toFixed(2)}</td><td class="p-3 text-center flex gap-1 justify-center"><button onclick="transformarEmPedido(${q.id})" class="bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded">Pedido</button><button onclick="imprimirOrcamento(${q.id})" class="bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded">PDF</button><button onclick="editarOrcamento(${q.id})" class="text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button><button onclick="deletarOrcamento(${q.id})" class="text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+          });
+        }
+        container.innerHTML = html + `</tbody>`;
+      } else {
+        document.getElementById('cards-pedidos').classList.remove('hidden');
+        const peds = pedidos.filter(p => { const bateBusca = (p.client||'').toLowerCase().includes(termo) || (p.product||'').toLowerCase().includes(termo); const bateMes = mesSel === '' || (p.client_due_date && p.client_due_date.startsWith(mesSel)); return bateBusca && bateMes; });
+        document.getElementById('count-ativos').innerText = peds.filter(p => p.status_production !== 'ATENDIDO' && p.status_production !== 'INADIMPLENTE').length;
+        document.getElementById('count-atendidos').innerText = peds.filter(p => p.status_production === 'ATENDIDO').length;
+        document.getElementById('count-inadimplentes').innerText = peds.filter(p => p.status_production === 'INADIMPLENTE').length;
 
-Aqui está uma estrutura de como a tabela pode ficar visualmente mais limpa e condensada:
+        let tRec = 0; let tPag = 0; let tRecd = 0; let tInad = 0;
+        peds.forEach(p => { if (p.status_production === 'INADIMPLENTE') tInad += (p.sale_value || 0); else { tRec += Math.max((p.sale_value||0) - (p.paid_by_client||0), 0); tRecd += (p.paid_by_client||0); } tPag += Math.max((p.supplier_cost||0) - (p.paid_to_supplier||0), 0); });
+        document.getElementById('res-ped-receber').innerText = `R$ ${tRec.toFixed(2)}`; document.getElementById('res-ped-pagar').innerText = `R$ ${tPag.toFixed(2)}`; document.getElementById('res-ped-recebido').innerText = `R$ ${tRecd.toFixed(2)}`; document.getElementById('res-ped-inadimplente').innerText = `R$ ${tInad.toFixed(2)}`;
 
-**CLIENTE:** RZK - AGRO[cite: 1] | **EMISSÃO:** 24/09/2026[cite: 1]
-**PAGAMENTO:** 70% NO FECHAMENTO RESTANTE NO PAGAMENTO[cite: 1]
+        const paraRen = peds.filter(p => { if (subAbaPedidosAtual === 'ativos') return p.status_production !== 'ATENDIDO' && p.status_production !== 'INADIMPLENTE'; if (subAbaPedidosAtual === 'atendidos') return p.status_production === 'ATENDIDO'; return p.status_production === 'INADIMPLENTE'; });
+        let html = `<thead class="bg-slate-50 border-b text-xs uppercase text-slate-500"><tr><th class="p-3">Cliente / Produto / Venc</th><th class="p-3">Status Produção</th><th class="p-3 text-right">Venda / Falta Rec.</th><th class="p-3 text-right">Custo / Falta Pag.</th><th class="p-3 text-center">Ações</th></tr></thead><tbody class="divide-y divide-slate-100">`;
+        if (paraRen.length === 0) html += `<tr><td colspan="5" class="p-4 text-center text-slate-400">Vazio.</td></tr>`;
+        else {
+          paraRen.forEach(p => {
+            const fRec = (p.sale_value||0)-(p.paid_by_client||0); const fPag = (p.supplier_cost||0)-(p.paid_to_supplier||0);
+            html += `<tr><td class="p-3 font-bold">${p.client} <span class="text-[11px] text-slate-500 block font-normal break-words">${p.product}</span><span class="text-[10px] font-bold mt-1 block">Venc: ${formatarDataBR(p.client_due_date)}</span></td><td class="p-3"><select onchange="alterarStatusPedido(${p.id}, this.value)" class="text-[10px] w-full font-bold px-1 py-1 rounded border mt-1 ${getStatusClass(p.status_production)}"><option value="AGUARDANDO PAGAMENTO DA ENTRADA" ${p.status_production==='AGUARDANDO PAGAMENTO DA ENTRADA'?'selected':''}>AGUARD. ENTRADA</option><option value="EM PRODUÇÃO" ${p.status_production==='EM PRODUÇÃO'?'selected':''}>EM PRODUÇÃO</option><option value="AGUARDANDO RETIRADA OU ENTREGA" ${p.status_production==='AGUARDANDO RETIRADA OU ENTREGA'?'selected':''}>AGUARD. RETIRADA</option><option value="AGUARDANDO PAGAMENTO FINAL" ${p.status_production==='AGUARDANDO PAGAMENTO FINAL'?'selected':''}>AGUARD. PAGTO FINAL</option><option value="ATENDIDO" ${p.status_production==='ATENDIDO'?'selected':''}>✅ ATENDIDO</option><option value="INADIMPLENTE" ${p.status_production==='INADIMPLENTE'?'selected':''}>🚫 INADIMPLENTE</option></select></td><td class="p-3 text-right"><div class="font-bold text-slate-800">R$ ${(p.sale_value||0).toFixed(2)}</div><div class="text-[11px] ${fRec>0?'text-amber-600 font-bold':'text-emerald-600 font-bold'}">${fRec>0?'Falta: R$ '+fRec.toFixed(2):'Pago'}</div></td><td class="p-3 text-right">${p.production_type==='TERCEIRO'||p.supplier_cost>0?`<div class="font-bold text-slate-800">R$ ${(p.supplier_cost||0).toFixed(2)}</div><div class="text-[11px] ${fPag>0?'text-rose-600 font-bold':'text-emerald-600 font-bold'}">${fPag>0?'Falta: R$ '+fPag.toFixed(2):'Quitado'}</div>`:'-'}</td><td class="p-3 text-center flex justify-center gap-2"><button onclick="editarPedido(${p.id})" class="text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button><button onclick="deletarPedido(${p.id})" class="text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+          });
+        }
+        container.innerHTML = html + `</tbody>`;
+      }
+    }
 
-| QTD | DESCRIÇÃO DO ITEM | V. UNITÁRIO | SUBTOTAL |
-| :--- | :--- | :--- | :--- |
-| 180[cite: 1] | SACOCHILA[cite: 1] | R$ 19,90[cite: 1] | R$ 3.582,00[cite: 1] |
-| 180[cite: 1] | CADERNETA 10X15[cite: 1] | R$ 12,00[cite: 1] | R$ 2.160,00[cite: 1] |
-| 180[cite: 1] | CANETA[cite: 1] | R$ 8,54[cite: 1] | R$ 1.537,20[cite: 1] |
-| 180[cite: 1] | BONÉ[cite: 1] | R$ 27,90[cite: 1] | R$ 5.022,00[cite: 1] |
-| 180[cite: 1] | GARRAFA SQUEEZE[cite: 1] | R$ 99,00[cite: 1] | R$ 17.820,00[cite: 1] |
-| | **TOTAL:** | | **R$ 30.121,20**[cite: 1] |
+    // =====================================
+    // GERAÇÃO DE PDF ORÇAMENTO COMPACTO
+    // =====================================
+    function imprimirOrcamento(id) {
+      const q = quotes.find(x => x.id === id); if(!q) return;
+      const perfil = profiles.find(p => p.name === q.entity);
+      const logoHtml = (perfil && perfil.logo) ? `<img src="${perfil.logo}" style="max-height: 55px; max-width: 180px; object-fit: contain;">` : `<h2 style="font-size:16pt; font-weight:900; color: #1e1b4b; margin:0; text-transform:uppercase;">${q.entity}</h2>`;
+      let itensHtml = ''; 
+      try { 
+        JSON.parse(q.items).forEach(i => { 
+          itensHtml += `<tr><td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; color: #334155; font-size: 10pt;">${i.desc}</td><td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #334155; font-weight: bold; font-size: 10pt;">${i.qtd}</td><td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #475569; font-size: 10pt;">R$ ${parseFloat(i.val).toFixed(2)}</td><td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold; color: #0f172a; font-size: 10pt;">R$ ${(i.qtd * i.val).toFixed(2)}</td></tr>`; 
+        }); 
+      } catch(e) {}
+      
+      const dataStr = q.created_at ? q.created_at.split('-').reverse().join('/') : '-';
+      const win = window.open('', '_blank');
+      win.document.write(`<!DOCTYPE html><html><head><title>Orçamento_${q.client.replace(/\s+/g, '_')}</title><style>body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #0f172a; margin: 20px auto; max-width: 800px; line-height: 1.3; font-size: 10pt; } .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #4f46e5; padding-bottom: 8px; margin-bottom: 15px; } .header-right { text-align: right; } .header-right h1 { margin:0; color:#4f46e5; font-size: 16pt; font-weight: 900; letter-spacing: 1px; } .header-right p { margin:2px 0 0 0; color:#64748b; font-size: 10pt; font-weight: 600; } .info-section { display: flex; justify-content: space-between; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; } .info-block h3 { margin: 0 0 2px 0; font-size: 9pt; color: #64748b; text-transform: uppercase; } .info-block p { margin: 0; font-size: 11pt; font-weight: 700; color: #0f172a; } table { width: 100%; border-collapse: collapse; margin-bottom: 15px; } th { background-color: #f1f5f9; padding: 6px; text-align: left; font-size: 9pt; color: #475569; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; } .totals-wrapper { display: flex; justify-content: flex-end; margin-bottom: 20px; } .totals { width: 250px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; } .totals-row { display: flex; justify-content: space-between; font-size: 12pt; font-weight: 900; color: #4f46e5; } .footer { font-size: 9pt; color: #475569; margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 10px; } .footer h4 { margin: 0 0 4px 0; color: #0f172a; font-size: 10pt; text-transform: uppercase; } @media print { body { margin: 0; padding: 15px; max-width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .info-section, .totals { background-color: #f8fafc !important; } th { background-color: #f1f5f9 !important; } }</style></head><body><div class="header"><div>${logoHtml}</div><div class="header-right"><h1>ORÇAMENTO</h1><p>Emissão: ${dataStr}</p></div></div><div class="info-section"><div class="info-block"><h3>Cliente / Destinatário</h3><p>${q.client}</p></div><div class="info-block" style="text-align: right;"><h3>Condições de Pagamento</h3><p>${q.payment_terms || 'A combinar'}</p></div></div><table><thead><tr><th>Descrição do Item</th><th style="text-align: center;">Qtd</th><th style="text-align: right;">V. Unit</th><th style="text-align: right;">Subtotal</th></tr></thead><tbody>${itensHtml}</tbody></table><div class="totals-wrapper"><div class="totals"><div class="totals-row"><span>TOTAL:</span><span>R$ ${q.total_value.toFixed(2)}</span></div></div></div><div class="footer"><h4>Observações Técnicas</h4><p>${q.notes ? q.notes.replace(/\n/g, '<br>') : ''}</p></div></body></html>`);
+      win.document.close(); win.focus(); setTimeout(() => win.print(), 500); 
+    }
 
-**OBSERVAÇÕES:** PRAZO MÉDIO PARA CONFECÇÃO DE 15 A 30 DIAS ÚTEIS APÓS O FECHAMENTO E APROVAÇÃO DAS ARTES.[cite: 1] ESTE ORÇAMENTO É VÁLIDO POR 15 DIAS, VALORES SUJEITOS A ALTERAÇÃO APÓS O VENCIMENTO.[cite: 1]
+    function abrirModalOrcamento() { document.getElementById('orc_id').value = ""; document.getElementById('orc_client').value = ""; document.getElementById('orc_payment_terms').value = ""; document.getElementById('orc_notes').value = ""; document.getElementById('orc_created_at').value = dateInputStr; const sel = document.getElementById('orc_entity'); sel.innerHTML = ''; profiles.forEach(p => sel.innerHTML += `<option value="${p.name}">${p.name}</option>`); document.getElementById('linhas-produtos-orcamento').innerHTML = ''; adicionarLinhaProduto(); document.getElementById('modal-orcamento').classList.remove('hidden'); }
+    function adicionarLinhaProduto(desc="", qtd=1, val=0) { const tbody = document.getElementById('linhas-produtos-orcamento'); const tr = document.createElement('tr'); tr.innerHTML = `<td class="p-1"><input type="text" class="w-full p-1.5 border rounded text-xs item-desc" value="${desc}" required placeholder="Ex: Arte"></td><td class="p-1"><input type="number" min="1" class="w-full p-1.5 border rounded text-xs text-center item-qtd" value="${qtd}" oninput="calcularTotalOrcamento()" required></td><td class="p-1"><input type="number" step="0.01" class="w-full p-1.5 border rounded text-xs item-val" value="${parseFloat(val).toFixed(2)}" oninput="calcularTotalOrcamento()" required></td><td class="p-1 font-bold text-right text-indigo-700 text-xs item-total">R$ ${(qtd*val).toFixed(2)}</td><td class="p-1 text-center"><button type="button" onclick="this.closest('tr').remove(); calcularTotalOrcamento();" class="text-rose-500 p-1"><i class="fa-solid fa-trash"></i></button></td>`; tbody.appendChild(tr); calcularTotalOrcamento(); }
+    function calcularTotalOrcamento() { let total = 0; document.querySelectorAll('#linhas-produtos-orcamento tr').forEach(tr => { const sum = (parseInt(tr.querySelector('.item-qtd').value)||0) * (parseFloat(tr.querySelector('.item-val').value)||0); tr.querySelector('.item-total').innerText = `R$ ${sum.toFixed(2)}`; total += sum; }); quoteTotalCache = total; document.getElementById('orc_total_display').innerText = `R$ ${total.toFixed(2)}`; }
+    async function salvarOrcamento(e) { e.preventDefault(); const linhas = document.querySelectorAll('#linhas-produtos-orcamento tr'); if(linhas.length === 0) return alert("Adicione 1 produto."); const itens = []; linhas.forEach(tr => itens.push({desc: tr.querySelector('.item-desc').value, qtd: parseInt(tr.querySelector('.item-qtd').value)||1, val: parseFloat(tr.querySelector('.item-val').value)||0})); const id = document.getElementById('orc_id').value; const body = {client: document.getElementById('orc_client').value, entity: document.getElementById('orc_entity').value, items: JSON.stringify(itens), payment_terms: document.getElementById('orc_payment_terms').value, notes: document.getElementById('orc_notes').value, total_value: quoteTotalCache, status: "PENDENTE", created_at: document.getElementById('orc_created_at').value}; try { if(id) await fetch(`/api/quotes/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); else await fetch('/api/quotes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); } finally { fecharModalOrcamento(); carregarDados(); } }
+    function fecharModalOrcamento() { document.getElementById('modal-orcamento').classList.add('hidden'); }
+    async function deletarOrcamento(id) { if(confirm('Excluir?')) { await fetch(`/api/quotes/${id}`, { method: 'DELETE' }); carregarDados(); } }
+    function editarOrcamento(id) { const q = quotes.find(x => x.id === id); if(!q) return; abrirModalOrcamento(); document.getElementById('orc_id').value = q.id; document.getElementById('orc_client').value = q.client; document.getElementById('orc_entity').value = q.entity; document.getElementById('orc_payment_terms').value = q.payment_terms || ""; document.getElementById('orc_notes').value = q.notes || ""; document.getElementById('orc_created_at').value = q.created_at || dateInputStr; const tbody = document.getElementById('linhas-produtos-orcamento'); tbody.innerHTML = ''; try { JSON.parse(q.items).forEach(i => adicionarLinhaProduto(i.desc, i.qtd, i.val)); } catch(e){ adicionarLinhaProduto(); } }
+    function transformarEmPedido(id) { const q = quotes.find(x => x.id === id); if(!q) return; let text = ""; try { text = JSON.parse(q.items).map(i => `${i.qtd}x ${i.desc}`).join('\n'); } catch(e){} abrirModalPedido(); document.getElementById('ped_quote_id_origin').value = q.id; document.getElementById('ped_client').value = q.client; document.getElementById('ped_entity').value = q.entity; document.getElementById('ped_product').value = text; document.getElementById('ped_sale_value').value = q.total_value.toFixed(2); document.getElementById('ped_client_due_date').value = dateInputStr; }
 
----
+    function abrirModalPedido() { document.getElementById('ped_id').value = ""; document.getElementById('ped_quote_id_origin').value = ""; document.getElementById('ped_client').value = ""; document.getElementById('ped_product').value = ""; document.getElementById('ped_supplier').value = ""; document.getElementById('ped_sale_value').value = "0.00"; document.getElementById('ped_paid_by_client').value = "0.00"; document.getElementById('ped_supplier_cost').value = "0.00"; document.getElementById('ped_paid_to_supplier').value = "0.00"; document.getElementById('ped_client_due_date').value = dateInputStr; document.getElementById('ped_supplier_due_date').value = ""; document.getElementById('ped_is_recurrent').checked = false; const sel = document.getElementById('ped_entity'); sel.innerHTML = ''; profiles.forEach(p => sel.innerHTML += `<option value="${p.name}">${p.name}</option>`); document.getElementById('modal-pedido').classList.remove('hidden'); }
+    function fecharModalPedido() { document.getElementById('modal-pedido').classList.add('hidden'); }
+    function editarPedido(id) { const p = pedidos.find(x => x.id === id); if(!p) return; abrirModalPedido(); document.getElementById('ped_id').value = p.id; document.getElementById('ped_client').value = p.client||""; document.getElementById('ped_product').value = p.product||""; document.getElementById('ped_entity').value = p.entity||""; document.getElementById('ped_production_type').value = p.production_type||"PROPRIA"; document.getElementById('ped_status_production').value = p.status_production||"EM PRODUÇÃO"; document.getElementById('ped_supplier').value = p.supplier||""; document.getElementById('ped_sale_value').value = (p.sale_value||0).toFixed(2); document.getElementById('ped_paid_by_client').value = (p.paid_by_client||0).toFixed(2); document.getElementById('ped_supplier_cost').value = (p.supplier_cost||0).toFixed(2); document.getElementById('ped_paid_to_supplier').value = (p.paid_to_supplier||0).toFixed(2); document.getElementById('ped_client_due_date').value = p.client_due_date||""; document.getElementById('ped_supplier_due_date').value = p.supplier_due_date||""; document.getElementById('ped_is_recurrent').checked = !!p.is_recurrent; }
+    async function salvarPedido(e) { e.preventDefault(); const quoteOrig = document.getElementById('ped_quote_id_origin').value; const body = {entity: document.getElementById('ped_entity').value, client: document.getElementById('ped_client').value, product: document.getElementById('ped_product').value, production_type: document.getElementById('ped_production_type').value, supplier: document.getElementById('ped_supplier').value||"", supplier_cost: parseFloat(document.getElementById('ped_supplier_cost').value)||0, status_production: document.getElementById('ped_status_production').value, client_due_date: document.getElementById('ped_client_due_date').value||null, supplier_due_date: document.getElementById('ped_supplier_due_date').value||null, sale_value: parseFloat(document.getElementById('ped_sale_value').value)||0, paid_by_client: parseFloat(document.getElementById('ped_paid_by_client').value)||0, paid_to_supplier: parseFloat(document.getElementById('ped_paid_to_supplier').value)||0, is_recurrent: document.getElementById('ped_is_recurrent').checked}; try { const id = document.getElementById('ped_id').value; if(id) await fetch(`/api/orders/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); else await fetch('/api/orders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); if(quoteOrig) await fetch(`/api/quotes/${quoteOrig}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status: "APROVADO"}) }); } finally { fecharModalPedido(); carregarDados(); mudarSubAbaPedidos('ativos'); } }
+    async function deletarPedido(id) { if(confirm('Excluir?')) { await fetch(`/api/orders/${id}`, { method: 'DELETE' }); carregarDados(); } }
+    async function alterarStatusPedido(id, st) { if (st === 'ATENDIDO') { const p = pedidos.find(x => x.id == id); if(!p) return; document.getElementById('atender_ped_id').value = p.id; document.getElementById('atender_valor_recebido').value = Math.max((p.sale_value||0)-(p.paid_by_client||0),0).toFixed(2); document.getElementById('modal-atender').classList.remove('hidden'); return; } await fetch(`/api/orders/${id}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status_production: st }) }); carregarDados(); }
+    function fecharModalAtender() { document.getElementById('modal-atender').classList.add('hidden'); renderizarTelaUm(); }
+    async function confirmarAtendimentoPedido() { const id = document.getElementById('atender_ped_id').value; const p = pedidos.find(x => x.id == id); if (!p) return; await fetch(`/api/orders/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ entity: p.entity, client: p.client, product: p.product, production_type: p.production_type, supplier: p.supplier||"", supplier_cost: p.supplier_cost, status_production: 'ATENDIDO', client_due_date: p.client_due_date, supplier_due_date: p.supplier_due_date, sale_value: p.sale_value, paid_by_client: (p.paid_by_client||0)+(parseFloat(document.getElementById('atender_valor_recebido').value)||0), paid_to_supplier: p.paid_to_supplier, is_recurrent: p.is_recurrent }) }); fecharModalAtender(); carregarDados(); }
 
-**Ajustes práticos para aplicar no seu gerador de PDF (Excel, Word ou sistema):**
+    function renderizarCartoes() {
+      const container = document.getElementById('box-cartoes'); if(!container) return; container.innerHTML = '';
+      cards.forEach(c => {
+        const f = bills.filter(b => b.card_id === c.id && !b.is_paid);
+        const used = f.reduce((acc, curr) => acc + curr.installment_amount, 0); const disp = c.total_limit - used;
+        container.innerHTML += `<div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative overflow-hidden"><div class="flex justify-between items-start mb-2"><div class="font-bold text-slate-800">${c.name}</div><div class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${c.entity}</div></div><div class="text-xs text-slate-500 mb-2">Venc: dia ${c.due_day} | Fech: dia ${c.closing_day}</div><div class="flex justify-between text-xs mb-1"><span class="text-slate-500">Limite Disp.</span><span class="font-bold text-emerald-600">R$ ${disp.toFixed(2)}</span></div><div class="flex justify-between text-xs"><span class="text-slate-500">Fatura Atual</span><span class="font-bold text-rose-600">R$ ${used.toFixed(2)}</span></div><button onclick="deletarCartao(${c.id})" class="absolute top-2 right-2 text-rose-300 hover:text-rose-600"><i class="fa-solid fa-trash text-xs"></i></button></div>`;
+      });
+    }
 
-* **Redução do Espaçamento da Tabela (Padding/Margins):** O documento atual apresenta linhas em branco ou espaçamento excessivo entre um produto e outro. Se estiver usando o Excel, selecione as linhas da tabela, vá em "Formatar", "Altura da Linha" e reduza para um valor em torno de 15. Se for um sistema web (HTML/CSS), reduza o `padding` e o `margin` das células da tabela (`td`, `tr`).
-* **Enxugamento do Cabeçalho:** Coloque o nome do cliente, a data de emissão e a condição de pagamento em uma mesma linha ou divididos em blocos horizontais menores. Use tamanho de fonte 10 ou 11 para esses dados.
-* **Rodapé em Parágrafo Único:** Em vez de listar as observações técnicas em linhas separadas (como o prazo de confecção e a validade de 15 dias[cite: 1]), junte tudo em um único parágrafo corrido com fonte tamanho 8 ou 9 na parte inferior da página.
-* **Redução da Fonte dos Itens:** A fonte da descrição dos itens e valores pode ser fixada em tamanho 9. Isso mantém a legibilidade e reduz drasticamente a altura que cada item ocupa na folha.
+    function renderizarBills() {
+      const tb = document.getElementById('tabela-bills'); if(!tb) return;
+      const mesSel = document.getElementById('filtro-mes-fin')?.value || ''; const perfilSel = document.getElementById('filtro-perfil-fin')?.value || 'ALL';
+      const filtradas = bills.filter(b => (mesSel === '' || b.due_date.startsWith(mesSel)) && (perfilSel === 'ALL' || b.entity === perfilSel));
+      filtradas.sort((a,b) => a.due_date.localeCompare(b.due_date));
+      let tPagar = 0; let tPago = 0; tb.innerHTML = '';
+      if(filtradas.length === 0) tb.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Vazio.</td></tr>`;
+      else {
+        filtradas.forEach(b => {
+          if(b.is_paid) tPago += b.installment_amount; else tPagar += b.installment_amount;
+          const cartao = cards.find(c => c.id === b.card_id); const cName = cartao ? `<span class="bg-purple-100 text-purple-800 text-[10px] px-1 py-0.5 rounded">${cartao.name}</span>` : '';
+          tb.innerHTML += `<tr><td class="p-3 font-bold">${b.creditor}</td><td class="p-3"><div class="text-[10px] font-bold text-slate-500 uppercase">${b.entity}</div>${cName}</td><td class="p-3 text-xs">${b.installment_number}/${b.total_installments}</td><td class="p-3 text-xs font-bold ${new Date(b.due_date) < new Date() && !b.is_paid ? 'text-rose-600' : 'text-slate-600'}">${formatarDataBR(b.due_date)}</td><td class="p-3 text-right font-black ${b.is_paid ? 'text-slate-400 line-through' : 'text-rose-600'}">R$ ${b.installment_amount.toFixed(2)}</td><td class="p-3 text-center"><input type="checkbox" ${b.is_paid?'checked':''} onchange="alterarStatusBill(${b.id}, this.checked)" class="w-4 h-4 cursor-pointer accent-emerald-600"></td><td class="p-3 text-center"><button onclick="editarBill(${b.id})" class="text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button><button onclick="abrirModalDeleteBill(${b.id})" class="text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+        });
+      }
+      document.getElementById('resumo-a-pagar').innerText = `R$ ${tPagar.toFixed(2)}`; document.getElementById('resumo-pago').innerText = `R$ ${tPago.toFixed(2)}`; document.getElementById('resumo-total-mes').innerText = `R$ ${(tPagar + tPago).toFixed(2)}`;
+    }
+    
+    async function alterarStatusBill(id, is_paid) { await fetch(`/api/bills/${id}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_paid }) }); carregarDados(); }
+    
+    function abrirModalBill() { document.getElementById('bill_id').value = ''; document.getElementById('bill_creditor').value = ''; document.getElementById('bill_installment_amount').value = ''; document.getElementById('bill_total_installments').value = '1'; document.getElementById('bill_total_amount').value = ''; document.getElementById('bill_due_date').value = dateInputStr; document.getElementById('bill_is_recurrent').checked = false; document.getElementById('box-edit-mode').classList.add('hidden'); const selE = document.getElementById('bill_entity'); selE.innerHTML = ''; profiles.forEach(p => selE.innerHTML += `<option value="${p.name}">${p.name}</option>`); const selC = document.getElementById('bill_card_id'); selC.innerHTML = '<option value="">Sem Cartão</option>'; cards.forEach(c => selC.innerHTML += `<option value="${c.id}">${c.name} (${c.entity})</option>`); toggleRecurrent(); document.getElementById('modal-bill').classList.remove('hidden'); }
+    function fecharModalBill() { document.getElementById('modal-bill').classList.add('hidden'); }
+    function editarBill(id) { const b = bills.find(x => x.id === id); if(!b) return; abrirModalBill(); document.getElementById('bill_id').value = b.id; document.getElementById('bill_creditor').value = b.creditor; document.getElementById('bill_entity').value = b.entity; document.getElementById('bill_card_id').value = b.card_id || ''; document.getElementById('bill_installment_amount').value = b.installment_amount.toFixed(2); document.getElementById('bill_total_installments').value = b.total_installments; document.getElementById('bill_total_amount').value = b.total_amount.toFixed(2); document.getElementById('bill_due_date').value = b.due_date; document.getElementById('bill_is_recurrent').checked = b.is_recurrent; if(b.group_id) document.getElementById('box-edit-mode').classList.remove('hidden'); toggleRecurrent(); }
+    function toggleRecurrent() { const isRec = document.getElementById('bill_is_recurrent').checked; document.getElementById('box_installments').style.display = isRec ? 'none' : 'block'; if(isRec) { document.getElementById('bill_total_installments').value = 1; } calcTotal(); }
+    function calcTotal() { const val = parseFloat(document.getElementById('bill_installment_amount').value)||0; const qtd = parseInt(document.getElementById('bill_total_installments').value)||1; document.getElementById('bill_total_amount').value = (val * qtd).toFixed(2); }
+    async function salvarBill(e) { e.preventDefault(); const id = document.getElementById('bill_id').value; const cId = document.getElementById('bill_card_id').value; const body = { creditor: document.getElementById('bill_creditor').value, entity: document.getElementById('bill_entity').value, total_amount: parseFloat(document.getElementById('bill_total_amount').value)||0, installment_number: 1, total_installments: parseInt(document.getElementById('bill_total_installments').value)||1, installment_amount: parseFloat(document.getElementById('bill_installment_amount').value)||0, due_date: document.getElementById('bill_due_date').value, is_recurrent: document.getElementById('bill_is_recurrent').checked, card_id: cId ? parseInt(cId) : null }; if(id) { body.mode = document.querySelector('input[name="edit_mode"]:checked')?.value || 'SINGLE'; await fetch(`/api/bills/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); } else { await fetch('/api/bills', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); } fecharModalBill(); carregarDados(); }
+    function abrirModalDeleteBill(id) { const b = bills.find(x => x.id === id); if(!b) return; billToDeleteId = id; if(b.group_id) { document.getElementById('modal-delete-bill').classList.remove('hidden'); } else { confirmarExclusaoBill('SINGLE'); } }
+    function fecharModalDeleteBill() { document.getElementById('modal-delete-bill').classList.add('hidden'); billToDeleteId = null; }
+    async function confirmarExclusaoBill(mode) { if(!billToDeleteId) return; await fetch(`/api/bills/${billToDeleteId}?mode=${mode}`, { method: 'DELETE' }); fecharModalDeleteBill(); carregarDados(); }
 
-Qual sistema ou ferramenta você está utilizando no momento para gerar e exportar esse orçamento?
+    function abrirModalCartao() { document.getElementById('card_id').value = ''; document.getElementById('card_name').value = ''; document.getElementById('card_limit').value = ''; document.getElementById('card_closing').value = ''; document.getElementById('card_due').value = ''; const selE = document.getElementById('card_entity'); selE.innerHTML = ''; profiles.forEach(p => selE.innerHTML += `<option value="${p.name}">${p.name}</option>`); document.getElementById('modal-cartao').classList.remove('hidden'); }
+    function fecharModalCartao() { document.getElementById('modal-cartao').classList.add('hidden'); }
+    async function salvarCartao(e) { e.preventDefault(); const id = document.getElementById('card_id').value; const body = { name: document.getElementById('card_name').value, entity: document.getElementById('card_entity').value, total_limit: parseFloat(document.getElementById('card_limit').value)||0, closing_day: parseInt(document.getElementById('card_closing').value)||1, due_day: parseInt(document.getElementById('card_due').value)||1 }; if(id) await fetch(`/api/cards/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); else await fetch('/api/cards', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); fecharModalCartao(); carregarDados(); }
+    async function deletarCartao(id) { if(confirm('Excluir cartão?')) { await fetch(`/api/cards/${id}`, { method: 'DELETE' }); carregarDados(); } }
+
+    async function salvarSaldoInicial() { saldoInicial = parseFloat(document.getElementById('saldo-inicial-input').value) || 0; await fetch('/api/settings/balance', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ initial_balance: saldoInicial }) }); renderizarFluxo(); }
+
+    function renderizarFluxo() {
+      const tb = document.getElementById('tabela-cronograma-fluxo'); const tf = document.getElementById('tfoot-cronograma-fluxo'); if(!tb || !tf) return;
+      const mesSel = document.getElementById('filtro-mes-fluxo').value; const perfilSel = document.getElementById('filtro-perfil-fluxo').value; if(!mesSel) return;
+      const [ano, mes] = mesSel.split('-').map(Number); const ultimoDia = new Date(ano, mes, 0).getDate();
+      
+      let saldoAtual = saldoInicial; const eventosAnteriores = [];
+      pedidos.filter(p => p.status_production !== 'INADIMPLENTE').forEach(p => { if(p.client_due_date && p.client_due_date < mesSel + '-01') eventosAnteriores.push({ val: p.sale_value, tipo: 'entrada' }); if(p.supplier_due_date && p.supplier_due_date < mesSel + '-01') eventosAnteriores.push({ val: p.supplier_cost, tipo: 'saida' }); });
+      bills.forEach(b => { if(b.due_date < mesSel + '-01') eventosAnteriores.push({ val: b.installment_amount, tipo: 'saida' }); });
+      eventosAnteriores.forEach(e => { if(e.tipo === 'entrada') saldoAtual += e.val; else saldoAtual -= e.val; });
+
+      let html = ''; let tEntrada = 0; let tSaida = 0;
+      for (let dia = 1; dia <= ultimoDia; dia++) {
+        const dataStr = `${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+        const eventosDia = [];
+        pedidos.filter(p => p.status_production !== 'INADIMPLENTE' && (perfilSel === 'ALL' || p.entity === perfilSel)).forEach(p => { if(p.client_due_date === dataStr && p.sale_value > 0) eventosDia.push({ desc: `Pedido: ${p.client}`, val: p.sale_value, tipo: 'entrada', origem: 'Venda' }); if(p.supplier_due_date === dataStr && p.supplier_cost > 0) eventosDia.push({ desc: `Forn: ${p.supplier}`, val: p.supplier_cost, tipo: 'saida', origem: 'Custo' }); });
+        bills.filter(b => (perfilSel === 'ALL' || b.entity === perfilSel)).forEach(b => { if(b.due_date === dataStr) eventosDia.push({ desc: b.creditor, val: b.installment_amount, tipo: 'saida', origem: 'Despesa' }); });
+        
+        if(eventosDia.length > 0) {
+          eventosDia.forEach((ev, idx) => {
+            if(ev.tipo === 'entrada') { saldoAtual += ev.val; tEntrada += ev.val; } else { saldoAtual -= ev.val; tSaida += ev.val; }
+            const rowClass = ev.tipo === 'entrada' ? 'bg-emerald-50/30' : 'bg-rose-50/30'; const vEnt = ev.tipo === 'entrada' ? `R$ ${ev.val.toFixed(2)}` : '-'; const vSai = ev.tipo === 'saida' ? `R$ ${ev.val.toFixed(2)}` : '-';
+            html += `<tr class="${rowClass}"><td class="p-2.5 font-bold text-slate-600">${idx===0 ? formatarDataBR(dataStr) : ''}</td><td class="p-2.5 text-xs text-slate-500 uppercase">${ev.origem}</td><td class="p-2.5 font-medium text-slate-800">${ev.desc}</td><td class="p-2.5 text-right font-bold text-emerald-600">${vEnt}</td><td class="p-2.5 text-right font-bold text-rose-600">${vSai}</td><td class="p-2.5 text-right font-black ${saldoAtual>=0?'text-blue-700':'text-rose-700'}">R$ ${saldoAtual.toFixed(2)}</td></tr>`;
+          });
+        }
+      }
+
+      if(html === '') html = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Vazio.</td></tr>`;
+      tb.innerHTML = html;
+      tf.innerHTML = `<tr class="bg-slate-100 border-t-2 border-slate-300 font-black text-sm"><td colspan="3" class="p-3 text-right uppercase text-slate-600">Total do Mês Projetado:</td><td class="p-3 text-right text-emerald-700">R$ ${tEntrada.toFixed(2)}</td><td class="p-3 text-right text-rose-700">R$ ${tSaida.toFixed(2)}</td><td class="p-3 text-right ${saldoAtual>=0?'text-blue-700':'text-rose-700'}">R$ ${saldoAtual.toFixed(2)}</td></tr>`;
+      document.getElementById('saldo-projetado-fluxo').innerText = `R$ ${saldoAtual.toFixed(2)}`;
+    }
+
+    function mudarAba(aba) {
+      document.getElementById('sec-pedidos').classList.toggle('hidden', aba !== 'pedidos');
+      document.getElementById('sec-financeiro').classList.toggle('hidden', aba !== 'financeiro');
+      document.getElementById('sec-fluxo').classList.toggle('hidden', aba !== 'fluxo');
+      document.getElementById('tab-pedidos').classList.toggle('tab-active', aba === 'pedidos');
+      document.getElementById('tab-financeiro').classList.toggle('tab-active', aba === 'financeiro');
+      document.getElementById('tab-fluxo').classList.toggle('tab-active', aba === 'fluxo');
+    }
+
+    carregarDados();
+  </script>
+</body>
+</html>
