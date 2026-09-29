@@ -1,126 +1,109 @@
-import os
-from typing import List, Optional
-from datetime import datetime, date
-from calendar import monthrange
-
-from fastapi import FastAPI, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey, text
-from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
+from typing import Optional, List
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sql_app.db")
+DATABASE_URL = "sqlite:///./database.db"
 
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-if "sqlite" in DATABASE_URL:
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL)
-
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# --- MODELOS DO BANCO DE DADOS ---
-class CompanyProfile(Base):
-    __tablename__ = "company_profiles"
+# ==========================================
+# MODELOS DO BANCO DE DADOS (SQLAlchemy)
+# ==========================================
+
+class ProfileModel(Base):
+    __tablename__ = "profiles"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     logo = Column(String, nullable=True)
 
-class Card(Base):
+class CardModel(Base):
     __tablename__ = "cards"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     entity = Column(String)
-    total_limit = Column(Float, default=0.0)
-    closing_day = Column(Integer, default=1)
-    due_day = Column(Integer, default=10)
+    total_limit = Column(Float)
+    closing_day = Column(Integer)
+    due_day = Column(Integer)
 
-class Quote(Base):
+class QuoteModel(Base):
     __tablename__ = "quotes"
     id = Column(Integer, primary_key=True, index=True)
     client = Column(String)
     entity = Column(String)
-    items = Column(String)  # JSON string
+    items = Column(String)
     payment_terms = Column(String, nullable=True)
     notes = Column(String, nullable=True)
-    total_value = Column(Float, default=0.0)
+    total_value = Column(Float)
     status = Column(String, default="PENDENTE")
     created_at = Column(String, nullable=True)
 
-class Order(Base):
+class OrderModel(Base):
     __tablename__ = "orders"
     id = Column(Integer, primary_key=True, index=True)
     entity = Column(String)
     client = Column(String)
     product = Column(String)
-    production_type = Column(String, default="PROPRIA")
+    production_type = Column(String)
     supplier = Column(String, nullable=True)
-    supplier_cost = Column(Float, default=0.0)
-    status_production = Column(String, default="EM PRODUÇÃO")
-    client_due_date = Column(String, nullable=True)
-    client_paid_date = Column(String, nullable=True)
-    supplier_due_date = Column(String, nullable=True)
-    supplier_paid_date = Column(String, nullable=True)
+    status_production = Column(String)
     sale_value = Column(Float, default=0.0)
     paid_by_client = Column(Float, default=0.0)
+    client_paid_entry_date = Column(String, nullable=True)
+    client_paid_final_date = Column(String, nullable=True)
+    client_due_date = Column(String, nullable=True)
+    supplier_cost = Column(Float, default=0.0)
     paid_to_supplier = Column(Float, default=0.0)
+    supplier_paid_entry_date = Column(String, nullable=True)
+    supplier_paid_final_date = Column(String, nullable=True)
+    supplier_due_date = Column(String, nullable=True)
     is_recurrent = Column(Boolean, default=False)
 
-class Bill(Base):
+class BillModel(Base):
     __tablename__ = "bills"
     id = Column(Integer, primary_key=True, index=True)
     creditor = Column(String)
     entity = Column(String)
-    card_id = Column(Integer, ForeignKey("cards.id"), nullable=True)
-    total_amount = Column(Float, default=0.0)
+    total_amount = Column(Float)
     installment_number = Column(Integer, default=1)
     total_installments = Column(Integer, default=1)
-    installment_amount = Column(Float, default=0.0)
+    installment_amount = Column(Float)
     due_date = Column(String)
     is_paid = Column(Boolean, default=False)
     is_recurrent = Column(Boolean, default=False)
+    card_id = Column(Integer, nullable=True)
     group_id = Column(String, nullable=True)
 
-class SystemSetting(Base):
-    __tablename__ = "system_settings"
+class SettingModel(Base):
+    __tablename__ = "settings"
     key = Column(String, primary_key=True, index=True)
     value = Column(String)
 
 Base.metadata.create_all(bind=engine)
 
-# Auto-migração das novas colunas de datas
-try:
-    with engine.begin() as conn:
-        conn.execute(text("ALTER TABLE orders ADD COLUMN client_paid_date VARCHAR"))
-        conn.execute(text("ALTER TABLE orders ADD COLUMN supplier_paid_date VARCHAR"))
-except Exception:
-    pass
+# ==========================================
+# SCHEMAS PYDANTIC
+# ==========================================
 
-# --- SCHEMAS PYDANTIC ---
-class CompanyProfileSchema(BaseModel):
-    id: Optional[int] = None
+class ProfileSchema(BaseModel):
     name: str
     logo: Optional[str] = None
-    class Config:
-        from_attributes = True
 
 class CardSchema(BaseModel):
-    id: Optional[int] = None
     name: str
     entity: str
     total_limit: float
     closing_day: int
     due_day: int
-    class Config:
-        from_attributes = True
 
 class QuoteSchema(BaseModel):
-    id: Optional[int] = None
     client: str
     entity: str
     items: str
@@ -129,49 +112,54 @@ class QuoteSchema(BaseModel):
     total_value: float
     status: Optional[str] = "PENDENTE"
     created_at: Optional[str] = None
-    class Config:
-        from_attributes = True
 
 class OrderSchema(BaseModel):
-    id: Optional[int] = None
     entity: str
     client: str
     product: str
-    production_type: str = "PROPRIA"
+    production_type: str
     supplier: Optional[str] = ""
-    supplier_cost: float = 0.0
-    status_production: str = "EM PRODUÇÃO"
-    client_due_date: Optional[str] = None
-    client_paid_date: Optional[str] = None
-    supplier_due_date: Optional[str] = None
-    supplier_paid_date: Optional[str] = None
+    status_production: str
     sale_value: float = 0.0
     paid_by_client: float = 0.0
+    client_paid_entry_date: Optional[str] = None
+    client_paid_final_date: Optional[str] = None
+    client_due_date: Optional[str] = None
+    supplier_cost: float = 0.0
     paid_to_supplier: float = 0.0
+    supplier_paid_entry_date: Optional[str] = None
+    supplier_paid_final_date: Optional[str] = None
+    supplier_due_date: Optional[str] = None
     is_recurrent: bool = False
-    class Config:
-        from_attributes = True
 
 class BillSchema(BaseModel):
-    id: Optional[int] = None
     creditor: str
     entity: str
-    card_id: Optional[int] = None
     total_amount: float
     installment_number: int = 1
     total_installments: int = 1
     installment_amount: float
     due_date: str
-    is_paid: bool = False
     is_recurrent: bool = False
-    group_id: Optional[str] = None
+    card_id: Optional[int] = None
     mode: Optional[str] = "SINGLE"
-    class Config:
-        from_attributes = True
 
-# --- APP & DEPENDENCIAS ---
-app = FastAPI(title="ERP Unificado")
-templates = Jinja2Templates(directory="templates")
+class BalanceSchema(BaseModel):
+    initial_balance: float
+
+# ==========================================
+# APLICAÇÃO FASTAPI
+# ==========================================
+
+app = FastAPI(title="ERP Unificado API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db():
     db = SessionLocal()
@@ -180,220 +168,207 @@ def get_db():
     finally:
         db.close()
 
-@app.on_event("startup")
-def startup_event():
-    db = SessionLocal()
-    if not db.query(CompanyProfile).first():
-        db.add(CompanyProfile(name="CVN"))
-        db.commit()
-    db.close()
-
-# --- ROTAS DE PAGINAS ---
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-# --- API PERFIS ---
-@app.get("/api/profiles", response_model=List[CompanyProfileSchema])
+# PROFILES
+@app.get("/api/profiles")
 def get_profiles(db: Session = Depends(get_db)):
-    return db.query(CompanyProfile).all()
+    return db.query(ProfileModel).all()
 
-@app.post("/api/profiles", response_model=CompanyProfileSchema)
-def create_profile(p: CompanyProfileSchema, db: Session = Depends(get_db)):
-    db_p = CompanyProfile(name=p.name, logo=p.logo)
-    db.add(db_p)
+@app.post("/api/profiles")
+def create_profile(data: ProfileSchema, db: Session = Depends(get_db)):
+    p = ProfileModel(name=data.name, logo=data.logo)
+    db.add(p)
     db.commit()
-    db.refresh(db_p)
-    return db_p
+    db.refresh(p)
+    return p
 
-@app.put("/api/profiles/{id}", response_model=CompanyProfileSchema)
-def update_profile(id: int, p: CompanyProfileSchema, db: Session = Depends(get_db)):
-    db_p = db.query(CompanyProfile).filter(CompanyProfile.id == id).first()
-    if db_p:
-        db_p.name = p.name
-        if p.logo is not None:
-            db_p.logo = p.logo
-        db.commit()
-        db.refresh(db_p)
-    return db_p
+@app.put("/api/profiles/{id}")
+def update_profile(id: int, data: ProfileSchema, db: Session = Depends(get_db)):
+    p = db.query(ProfileModel).filter(ProfileModel.id == id).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Perfil não encontrado")
+    p.name = data.name
+    if data.logo is not None:
+        p.logo = data.logo
+    db.commit()
+    return p
 
 @app.delete("/api/profiles/{id}")
 def delete_profile(id: int, db: Session = Depends(get_db)):
-    db_p = db.query(CompanyProfile).filter(CompanyProfile.id == id).first()
-    if db_p:
-        db.delete(db_p)
+    p = db.query(ProfileModel).filter(ProfileModel.id == id).first()
+    if p:
+        db.delete(p)
         db.commit()
     return {"ok": True}
 
-# --- API CARTÕES ---
-@app.get("/api/cards", response_model=List[CardSchema])
+# CARDS
+@app.get("/api/cards")
 def get_cards(db: Session = Depends(get_db)):
-    return db.query(Card).all()
+    return db.query(CardModel).all()
 
-@app.post("/api/cards", response_model=CardSchema)
-def create_card(c: CardSchema, db: Session = Depends(get_db)):
-    db_c = Card(**c.dict(exclude={"id"}))
-    db.add(db_c)
+@app.post("/api/cards")
+def create_card(data: CardSchema, db: Session = Depends(get_db)):
+    c = CardModel(**data.dict())
+    db.add(c)
     db.commit()
-    db.refresh(db_c)
-    return db_c
-
-@app.put("/api/cards/{id}", response_model=CardSchema)
-def update_card(id: int, c: CardSchema, db: Session = Depends(get_db)):
-    db_c = db.query(Card).filter(Card.id == id).first()
-    if db_c:
-        for k, v in c.dict(exclude={"id"}).items():
-            setattr(db_c, k, v)
-        db.commit()
-        db.refresh(db_c)
-    return db_c
+    db.refresh(c)
+    return c
 
 @app.delete("/api/cards/{id}")
 def delete_card(id: int, db: Session = Depends(get_db)):
-    db_c = db.query(Card).filter(Card.id == id).first()
-    if db_c:
-        db.delete(db_c)
+    c = db.query(CardModel).filter(CardModel.id == id).first()
+    if c:
+        db.delete(c)
         db.commit()
     return {"ok": True}
 
-# --- API ORÇAMENTOS ---
-@app.get("/api/quotes", response_model=List[QuoteSchema])
+# QUOTES
+@app.get("/api/quotes")
 def get_quotes(db: Session = Depends(get_db)):
-    return db.query(Quote).all()
+    return db.query(QuoteModel).all()
 
-@app.post("/api/quotes", response_model=QuoteSchema)
-def create_quote(q: QuoteSchema, db: Session = Depends(get_db)):
-    db_q = Quote(**q.dict(exclude={"id"}))
-    db.add(db_q)
+@app.post("/api/quotes")
+def create_quote(data: QuoteSchema, db: Session = Depends(get_db)):
+    q = QuoteModel(**data.dict())
+    db.add(q)
     db.commit()
-    db.refresh(db_q)
-    return db_q
+    db.refresh(q)
+    return q
 
-@app.put("/api/quotes/{id}", response_model=QuoteSchema)
-def update_quote(id: int, q: QuoteSchema, db: Session = Depends(get_db)):
-    db_q = db.query(Quote).filter(Quote.id == id).first()
-    if db_q:
-        for k, v in q.dict(exclude={"id"}).items():
-            setattr(db_q, k, v)
-        db.commit()
-        db.refresh(db_q)
-    return db_q
+@app.put("/api/quotes/{id}")
+def update_quote(id: int, data: QuoteSchema, db: Session = Depends(get_db)):
+    q = db.query(QuoteModel).filter(QuoteModel.id == id).first()
+    if not q:
+        raise HTTPException(status_code=404, detail="Orçamento não encontrado")
+    for k, v in data.dict().items():
+        setattr(q, k, v)
+    db.commit()
+    return q
 
 @app.put("/api/quotes/{id}/status")
-def update_quote_status(id: int, data: dict, db: Session = Depends(get_db)):
-    db_q = db.query(Quote).filter(Quote.id == id).first()
-    if db_q:
-        db_q.status = data.get("status", db_q.status)
+def update_quote_status(id: int, payload: dict, db: Session = Depends(get_db)):
+    q = db.query(QuoteModel).filter(QuoteModel.id == id).first()
+    if q:
+        q.status = payload.get("status", "PENDENTE")
         db.commit()
     return {"ok": True}
 
 @app.delete("/api/quotes/{id}")
 def delete_quote(id: int, db: Session = Depends(get_db)):
-    db_q = db.query(Quote).filter(Quote.id == id).first()
-    if db_q:
-        db.delete(db_q)
+    q = db.query(QuoteModel).filter(QuoteModel.id == id).first()
+    if q:
+        db.delete(q)
         db.commit()
     return {"ok": True}
 
-# --- API PEDIDOS ---
-@app.get("/api/orders", response_model=List[OrderSchema])
+# ORDERS
+@app.get("/api/orders")
 def get_orders(db: Session = Depends(get_db)):
-    return db.query(Order).all()
+    return db.query(OrderModel).all()
 
-@app.post("/api/orders", response_model=OrderSchema)
-def create_order(o: OrderSchema, db: Session = Depends(get_db)):
-    db_o = Order(**o.dict(exclude={"id"}))
-    db.add(db_o)
+@app.post("/api/orders")
+def create_order(data: OrderSchema, db: Session = Depends(get_db)):
+    o = OrderModel(**data.dict())
+    db.add(o)
     db.commit()
-    db.refresh(db_o)
-    return db_o
+    db.refresh(o)
+    return o
 
-@app.put("/api/orders/{id}", response_model=OrderSchema)
-def update_order(id: int, o: OrderSchema, db: Session = Depends(get_db)):
-    db_o = db.query(Order).filter(Order.id == id).first()
-    if db_o:
-        for k, v in o.dict(exclude={"id"}).items():
-            setattr(db_o, k, v)
-        db.commit()
-        db.refresh(db_o)
-    return db_o
+@app.put("/api/orders/{id}")
+def update_order(id: int, data: OrderSchema, db: Session = Depends(get_db)):
+    o = db.query(OrderModel).filter(OrderModel.id == id).first()
+    if not o:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    for k, v in data.dict().items():
+        setattr(o, k, v)
+    db.commit()
+    return o
 
 @app.put("/api/orders/{id}/status")
-def update_order_status(id: int, data: dict, db: Session = Depends(get_db)):
-    db_o = db.query(Order).filter(Order.id == id).first()
-    if db_o:
-        db_o.status_production = data.get("status_production", db_o.status_production)
+def update_order_status(id: int, payload: dict, db: Session = Depends(get_db)):
+    o = db.query(OrderModel).filter(OrderModel.id == id).first()
+    if o:
+        o.status_production = payload.get("status_production", o.status_production)
         db.commit()
     return {"ok": True}
 
 @app.delete("/api/orders/{id}")
 def delete_order(id: int, db: Session = Depends(get_db)):
-    db_o = db.query(Order).filter(Order.id == id).first()
-    if db_o:
-        db.delete(db_o)
+    o = db.query(OrderModel).filter(OrderModel.id == id).first()
+    if o:
+        db.delete(o)
         db.commit()
     return {"ok": True}
 
-# --- API CONTAS (BILLS) ---
-@app.get("/api/bills", response_model=List[BillSchema])
+# BILLS
+@app.get("/api/bills")
 def get_bills(db: Session = Depends(get_db)):
-    return db.query(Bill).all()
+    return db.query(BillModel).all()
 
-@app.post("/api/bills", response_model=BillSchema)
-def create_bill(b: BillSchema, db: Session = Depends(get_db)):
-    data = b.dict(exclude={"id", "mode"})
-    db_b = Bill(**data)
-    db.add(db_b)
+@app.post("/api/bills")
+def create_bill(data: BillSchema, db: Session = Depends(get_db)):
+    b = BillModel(
+        creditor=data.creditor,
+        entity=data.entity,
+        total_amount=data.total_amount,
+        installment_number=data.installment_number,
+        total_installments=data.total_installments,
+        installment_amount=data.installment_amount,
+        due_date=data.due_date,
+        is_recurrent=data.is_recurrent,
+        card_id=data.card_id
+    )
+    db.add(b)
     db.commit()
-    db.refresh(db_b)
-    return db_b
+    db.refresh(b)
+    return b
 
-@app.put("/api/bills/{id}", response_model=BillSchema)
-def update_bill(id: int, b: BillSchema, db: Session = Depends(get_db)):
-    db_b = db.query(Bill).filter(Bill.id == id).first()
-    if db_b:
-        data = b.dict(exclude={"id", "mode"})
-        for k, v in data.items():
-            setattr(db_b, k, v)
-        db.commit()
-        db.refresh(db_b)
-    return db_b
+@app.put("/api/bills/{id}")
+def update_bill(id: int, data: BillSchema, db: Session = Depends(get_db)):
+    b = db.query(BillModel).filter(BillModel.id == id).first()
+    if not b:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    b.creditor = data.creditor
+    b.entity = data.entity
+    b.installment_amount = data.installment_amount
+    b.total_amount = data.total_amount
+    b.due_date = data.due_date
+    b.card_id = data.card_id
+    b.is_recurrent = data.is_recurrent
+    db.commit()
+    return b
 
 @app.put("/api/bills/{id}/status")
-def update_bill_status(id: int, data: dict, db: Session = Depends(get_db)):
-    db_b = db.query(Bill).filter(Bill.id == id).first()
-    if db_b:
-        db_b.is_paid = data.get("is_paid", db_b.is_paid)
+def update_bill_status(id: int, payload: dict, db: Session = Depends(get_db)):
+    b = db.query(BillModel).filter(BillModel.id == id).first()
+    if b:
+        b.is_paid = payload.get("is_paid", False)
         db.commit()
     return {"ok": True}
 
 @app.delete("/api/bills/{id}")
-def delete_bill(id: int, mode: str = "SINGLE", db: Session = Depends(get_db)):
-    db_b = db.query(Bill).filter(Bill.id == id).first()
-    if db_b:
-        if mode == "ALL" and db_b.group_id:
-            db.query(Bill).filter(Bill.group_id == db_b.group_id).delete()
-        elif mode == "FUTURE" and db_b.group_id:
-            db.query(Bill).filter(Bill.group_id == db_b.group_id, Bill.installment_number >= db_b.installment_number).delete()
-        else:
-            db.delete(db_b)
+def delete_bill(id: int, mode: str = Query("SINGLE"), db: Session = Depends(get_db)):
+    b = db.query(BillModel).filter(BillModel.id == id).first()
+    if b:
+        db.delete(b)
         db.commit()
     return {"ok": True}
 
-# --- CONFIGURAÇÃO SALDO CAIXA ---
+# BALANCE SETTINGS
 @app.get("/api/settings/balance")
 def get_balance(db: Session = Depends(get_db)):
-    setting = db.query(SystemSetting).filter(SystemSetting.key == "initial_balance").first()
-    val = float(setting.value) if setting else 0.0
-    return {"initial_balance": val}
+    s = db.query(SettingModel).filter(SettingModel.key == "initial_balance").first()
+    return {"initial_balance": float(s.value) if s else 0.0}
 
 @app.post("/api/settings/balance")
-def set_balance(data: dict, db: Session = Depends(get_db)):
-    val = str(data.get("initial_balance", 0.0))
-    setting = db.query(SystemSetting).filter(SystemSetting.key == "initial_balance").first()
-    if setting:
-        setting.value = val
+def set_balance(data: BalanceSchema, db: Session = Depends(get_db)):
+    s = db.query(SettingModel).filter(SettingModel.key == "initial_balance").first()
+    if not s:
+        s = SettingModel(key="initial_balance", value=str(data.initial_balance))
+        db.add(s)
     else:
-        db.add(SystemSetting(key="initial_balance", value=val))
+        s.value = str(data.initial_balance)
     db.commit()
-    return {"ok": True}
+    return {"initial_balance": data.initial_balance}
+
+if os.path.exists("static"):
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")
