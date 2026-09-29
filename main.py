@@ -204,7 +204,7 @@ def startup_event():
 # --- ROTAS DE PAGINAS ---
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 # --- API PERFIS ---
 @app.get("/api/profiles", response_model=List[CompanyProfileSchema])
