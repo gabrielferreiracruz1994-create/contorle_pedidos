@@ -162,7 +162,7 @@
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b">
-            <tr><th class="p-2.5">Data Ref.</th><th class="p-2.5">Origem</th><th class="p-2.5">Descrição</th><th class="p-2.5 text-right">Entrada</th><th class="p-2.5 text-right">Saída</th><th class="p-2.5 text-right">Saldo Caixa Após Dia</th></tr>
+            <tr><th class="p-2.5">Data</th><th class="p-2.5">Status</th><th class="p-2.5">Origem</th><th class="p-2.5">Descrição</th><th class="p-2.5 text-right">Entrada</th><th class="p-2.5 text-right">Saída</th><th class="p-2.5 text-right">Saldo Caixa Após Dia</th></tr>
           </thead>
           <tbody id="tabela-cronograma-fluxo" class="divide-y divide-slate-100"></tbody>
           <tfoot id="tfoot-cronograma-fluxo"></tfoot>
@@ -223,8 +223,21 @@
         <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold text-slate-600 mb-1">Empresa *</label><select id="ped_entity" required class="w-full p-2 border rounded bg-white"></select></div><div><label class="block text-xs font-semibold text-slate-600 mb-1">Produção *</label><select id="ped_production_type" required class="w-full p-2 border rounded bg-white"><option value="PROPRIA">Própria</option><option value="TERCEIRO">Terceirizada</option></select></div></div>
         <div><label class="block text-xs font-semibold text-slate-600 mb-1">Status Inicial *</label><select id="ped_status_production" required class="w-full p-2 border rounded bg-white font-bold"><option value="AGUARDANDO PAGAMENTO DA ENTRADA">AGUARD. ENTRADA</option><option value="EM PRODUÇÃO" selected>EM PRODUÇÃO</option><option value="AGUARDANDO RETIRADA OU ENTREGA">AGUARD. RETIRADA/ENTREGA</option><option value="AGUARDANDO PAGAMENTO FINAL">AGUARD. PAGTO FINAL</option></select></div>
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center space-x-3"><input type="checkbox" id="ped_is_recurrent" class="w-4 h-4"><label for="ped_is_recurrent" class="text-xs font-bold text-blue-900 cursor-pointer">Recorrente (Mensal)</label></div>
-        <div class="p-3 bg-blue-50/50 border border-blue-100 rounded-lg grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold mb-1">Venda Total (R$)</label><input type="number" step="0.01" id="ped_sale_value" value="0.00" class="w-full p-2 border rounded font-bold"></div><div><label class="block text-xs font-semibold mb-1">Pago Cliente</label><input type="number" step="0.01" id="ped_paid_by_client" value="0.00" class="w-full p-2 border rounded"></div></div>
-        <div class="p-3 bg-purple-50/50 border border-purple-100 rounded-lg space-y-2"><div><label class="block text-xs font-semibold mb-1">Fornecedor</label><input type="text" id="ped_supplier" class="w-full p-2 border rounded"></div><div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold mb-1">Custo (R$)</label><input type="number" step="0.01" id="ped_supplier_cost" value="0.00" class="w-full p-2 border rounded"></div><div><label class="block text-xs font-semibold mb-1">Pago Fornec.</label><input type="number" step="0.01" id="ped_paid_to_supplier" value="0.00" class="w-full p-2 border rounded"></div></div></div>
+        <div class="p-3 bg-blue-50/50 border border-blue-100 rounded-lg space-y-3">
+          <div><label class="block text-xs font-semibold mb-1">Venda Total (R$)</label><input type="number" step="0.01" id="ped_sale_value" value="0.00" class="w-full p-2 border rounded font-bold"></div>
+          <div class="flex justify-between items-center"><span class="text-xs font-bold text-blue-900">Recebimentos do cliente</span><button type="button" onclick="adicionarMovimento('cliente')" class="text-[11px] bg-blue-600 text-white px-2 py-1 rounded">+ Recebimento</button></div>
+          <div id="lista-pagamentos-cliente" class="space-y-2"></div>
+          <div class="text-[11px] text-blue-800">Total recebido: <b id="total-pago-cliente">R$ 0,00</b></div>
+          <input type="hidden" id="ped_paid_by_client" value="0.00">
+        </div>
+        <div class="p-3 bg-purple-50/50 border border-purple-100 rounded-lg space-y-3">
+          <div><label class="block text-xs font-semibold mb-1">Fornecedor</label><input type="text" id="ped_supplier" class="w-full p-2 border rounded"></div>
+          <div><label class="block text-xs font-semibold mb-1">Custo Total Fornecedor (R$)</label><input type="number" step="0.01" id="ped_supplier_cost" value="0.00" class="w-full p-2 border rounded"></div>
+          <div class="flex justify-between items-center"><span class="text-xs font-bold text-purple-900">Pagamentos ao fornecedor</span><button type="button" onclick="adicionarMovimento('fornecedor')" class="text-[11px] bg-purple-600 text-white px-2 py-1 rounded">+ Pagamento</button></div>
+          <div id="lista-pagamentos-fornecedor" class="space-y-2"></div>
+          <div class="text-[11px] text-purple-800">Total pago: <b id="total-pago-fornecedor">R$ 0,00</b></div>
+          <input type="hidden" id="ped_paid_to_supplier" value="0.00">
+        </div>
         <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-semibold mb-1">Venc. Recebimento</label><input type="date" id="ped_client_due_date" required class="w-full p-2 border rounded"></div><div><label class="block text-xs font-semibold mb-1">Venc. Fornecedor</label><input type="date" id="ped_supplier_due_date" class="w-full p-2 border rounded"></div></div>
         <div class="flex justify-end gap-2 pt-3 border-t"><button type="button" onclick="fecharModalPedido()" class="px-4 py-2 border rounded text-xs">Cancelar</button><button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-semibold">Salvar</button></div>
       </form>
@@ -235,7 +248,7 @@
     <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 space-y-4">
       <h3 class="font-bold text-slate-800 text-base">Atender Pedido</h3>
       <input type="hidden" id="atender_ped_id" value="">
-      <div><label class="block text-xs font-semibold mb-1">Valor Recebido (R$)</label><input type="number" step="0.01" id="atender_valor_recebido" class="w-full p-2 border rounded font-bold"></div>
+      <div><label class="block text-xs font-semibold mb-1">Valor Recebido (R$)</label><input type="number" step="0.01" id="atender_valor_recebido" class="w-full p-2 border rounded font-bold"></div><div><label class="block text-xs font-semibold mb-1">Data do Recebimento</label><input type="date" id="atender_data_recebido" class="w-full p-2 border rounded"></div>
       <div class="flex justify-end gap-2 pt-2 border-t"><button type="button" onclick="fecharModalAtender()" class="px-3 py-2 border rounded text-xs">Cancelar</button><button type="button" onclick="confirmarAtendimentoPedido()" class="px-4 py-2 bg-emerald-600 text-white rounded text-xs font-semibold">Confirmar</button></div>
     </div>
   </div>
@@ -439,14 +452,111 @@
     function editarOrcamento(id) { const q = quotes.find(x => x.id === id); if(!q) return; abrirModalOrcamento(); document.getElementById('orc_id').value = q.id; document.getElementById('orc_client').value = q.client; document.getElementById('orc_entity').value = q.entity; document.getElementById('orc_payment_terms').value = q.payment_terms || ""; document.getElementById('orc_notes').value = q.notes || ""; document.getElementById('orc_created_at').value = q.created_at || dateInputStr; const tbody = document.getElementById('linhas-produtos-orcamento'); tbody.innerHTML = ''; try { JSON.parse(q.items).forEach(i => adicionarLinhaProduto(i.desc, i.qtd, i.val)); } catch(e){ adicionarLinhaProduto(); } }
     function transformarEmPedido(id) { const q = quotes.find(x => x.id === id); if(!q) return; let text = ""; try { text = JSON.parse(q.items).map(i => `${i.qtd}x ${i.desc}`).join('\n'); } catch(e){} abrirModalPedido(); document.getElementById('ped_quote_id_origin').value = q.id; document.getElementById('ped_client').value = q.client; document.getElementById('ped_entity').value = q.entity; document.getElementById('ped_product').value = text; document.getElementById('ped_sale_value').value = q.total_value.toFixed(2); document.getElementById('ped_client_due_date').value = dateInputStr; }
 
-    function abrirModalPedido() { document.getElementById('ped_id').value = ""; document.getElementById('ped_quote_id_origin').value = ""; document.getElementById('ped_client').value = ""; document.getElementById('ped_product').value = ""; document.getElementById('ped_supplier').value = ""; document.getElementById('ped_sale_value').value = "0.00"; document.getElementById('ped_paid_by_client').value = "0.00"; document.getElementById('ped_supplier_cost').value = "0.00"; document.getElementById('ped_paid_to_supplier').value = "0.00"; document.getElementById('ped_client_due_date').value = dateInputStr; document.getElementById('ped_supplier_due_date').value = ""; document.getElementById('ped_is_recurrent').checked = false; const sel = document.getElementById('ped_entity'); sel.innerHTML = ''; profiles.forEach(p => sel.innerHTML += `<option value="${p.name}">${p.name}</option>`); document.getElementById('modal-pedido').classList.remove('hidden'); }
+    function lerMovimentos(tipo) {
+      const box = document.getElementById(tipo === 'cliente' ? 'lista-pagamentos-cliente' : 'lista-pagamentos-fornecedor');
+      if(!box) return [];
+      return [...box.querySelectorAll('.mov-row')].map(row => ({
+        date: row.querySelector('.mov-date').value,
+        amount: parseFloat(row.querySelector('.mov-amount').value) || 0
+      })).filter(x => x.date && x.amount > 0);
+    }
+
+    function atualizarTotaisMovimentos() {
+      const cli = lerMovimentos('cliente').reduce((s,x)=>s+x.amount,0);
+      const forn = lerMovimentos('fornecedor').reduce((s,x)=>s+x.amount,0);
+      document.getElementById('ped_paid_by_client').value = cli.toFixed(2);
+      document.getElementById('ped_paid_to_supplier').value = forn.toFixed(2);
+      document.getElementById('total-pago-cliente').innerText = `R$ ${cli.toFixed(2)}`;
+      document.getElementById('total-pago-fornecedor').innerText = `R$ ${forn.toFixed(2)}`;
+    }
+
+    function adicionarMovimento(tipo, data='', valor='') {
+      const box = document.getElementById(tipo === 'cliente' ? 'lista-pagamentos-cliente' : 'lista-pagamentos-fornecedor');
+      const cor = tipo === 'cliente' ? 'blue' : 'purple';
+      const row = document.createElement('div');
+      row.className = 'mov-row grid grid-cols-[1fr_1fr_auto] gap-2 items-center';
+      row.innerHTML = `<input type="date" class="mov-date p-2 border rounded text-xs" value="${data || dateInputStr}" onchange="atualizarTotaisMovimentos()"><input type="number" step="0.01" min="0" class="mov-amount p-2 border rounded text-xs" placeholder="Valor" value="${valor !== '' ? Number(valor).toFixed(2) : ''}" oninput="atualizarTotaisMovimentos()"><button type="button" onclick="this.parentElement.remove(); atualizarTotaisMovimentos();" class="text-rose-600 p-2"><i class="fa-solid fa-trash"></i></button>`;
+      box.appendChild(row);
+      atualizarTotaisMovimentos();
+    }
+
+    function parseMovimentos(jsonStr) {
+      if(!jsonStr) return [];
+      try { const a = JSON.parse(jsonStr); return Array.isArray(a) ? a : []; } catch(e) { return []; }
+    }
+
+    function abrirModalPedido() {
+      document.getElementById('ped_id').value = ""; document.getElementById('ped_quote_id_origin').value = "";
+      document.getElementById('ped_client').value = ""; document.getElementById('ped_product').value = "";
+      document.getElementById('ped_supplier').value = ""; document.getElementById('ped_sale_value').value = "0.00";
+      document.getElementById('ped_supplier_cost').value = "0.00"; document.getElementById('ped_client_due_date').value = dateInputStr;
+      document.getElementById('ped_supplier_due_date').value = ""; document.getElementById('ped_is_recurrent').checked = false;
+      document.getElementById('lista-pagamentos-cliente').innerHTML = ''; document.getElementById('lista-pagamentos-fornecedor').innerHTML = '';
+      atualizarTotaisMovimentos();
+      const sel = document.getElementById('ped_entity'); sel.innerHTML = ''; profiles.forEach(p => sel.innerHTML += `<option value="${p.name}">${p.name}</option>`);
+      document.getElementById('modal-pedido').classList.remove('hidden');
+    }
     function fecharModalPedido() { document.getElementById('modal-pedido').classList.add('hidden'); }
-    function editarPedido(id) { const p = pedidos.find(x => x.id === id); if(!p) return; abrirModalPedido(); document.getElementById('ped_id').value = p.id; document.getElementById('ped_client').value = p.client||""; document.getElementById('ped_product').value = p.product||""; document.getElementById('ped_entity').value = p.entity||""; document.getElementById('ped_production_type').value = p.production_type||"PROPRIA"; document.getElementById('ped_status_production').value = p.status_production||"EM PRODUÇÃO"; document.getElementById('ped_supplier').value = p.supplier||""; document.getElementById('ped_sale_value').value = (p.sale_value||0).toFixed(2); document.getElementById('ped_paid_by_client').value = (p.paid_by_client||0).toFixed(2); document.getElementById('ped_supplier_cost').value = (p.supplier_cost||0).toFixed(2); document.getElementById('ped_paid_to_supplier').value = (p.paid_to_supplier||0).toFixed(2); document.getElementById('ped_client_due_date').value = p.client_due_date||""; document.getElementById('ped_supplier_due_date').value = p.supplier_due_date||""; document.getElementById('ped_is_recurrent').checked = !!p.is_recurrent; }
-    async function salvarPedido(e) { e.preventDefault(); const quoteOrig = document.getElementById('ped_quote_id_origin').value; const body = {entity: document.getElementById('ped_entity').value, client: document.getElementById('ped_client').value, product: document.getElementById('ped_product').value, production_type: document.getElementById('ped_production_type').value, supplier: document.getElementById('ped_supplier').value||"", supplier_cost: parseFloat(document.getElementById('ped_supplier_cost').value)||0, status_production: document.getElementById('ped_status_production').value, client_due_date: document.getElementById('ped_client_due_date').value||null, supplier_due_date: document.getElementById('ped_supplier_due_date').value||null, sale_value: parseFloat(document.getElementById('ped_sale_value').value)||0, paid_by_client: parseFloat(document.getElementById('ped_paid_by_client').value)||0, paid_to_supplier: parseFloat(document.getElementById('ped_paid_to_supplier').value)||0, is_recurrent: document.getElementById('ped_is_recurrent').checked}; try { const id = document.getElementById('ped_id').value; if(id) await fetch(`/api/orders/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); else await fetch('/api/orders', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) }); if(quoteOrig) await fetch(`/api/quotes/${quoteOrig}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status: "APROVADO"}) }); } finally { fecharModalPedido(); carregarDados(); mudarSubAbaPedidos('ativos'); } }
+
+    function editarPedido(id) {
+      const p = pedidos.find(x => x.id === id); if(!p) return; abrirModalPedido();
+      document.getElementById('ped_id').value = p.id; document.getElementById('ped_client').value = p.client||"";
+      document.getElementById('ped_product').value = p.product||""; document.getElementById('ped_entity').value = p.entity||"";
+      document.getElementById('ped_production_type').value = p.production_type||"PROPRIA"; document.getElementById('ped_status_production').value = p.status_production||"EM PRODUÇÃO";
+      document.getElementById('ped_supplier').value = p.supplier||""; document.getElementById('ped_sale_value').value = (p.sale_value||0).toFixed(2);
+      document.getElementById('ped_supplier_cost').value = (p.supplier_cost||0).toFixed(2); document.getElementById('ped_client_due_date').value = p.client_due_date||"";
+      document.getElementById('ped_supplier_due_date').value = p.supplier_due_date||""; document.getElementById('ped_is_recurrent').checked = !!p.is_recurrent;
+
+      let cm = parseMovimentos(p.client_payments), sm = parseMovimentos(p.supplier_payments);
+      // Compatibilidade com cadastros antigos: mantém o valor já recebido/pago.
+      if(cm.length === 0 && (p.paid_by_client||0) > 0) cm = [{date: p.client_paid_date || p.client_due_date || dateInputStr, amount: p.paid_by_client}];
+      if(sm.length === 0 && (p.paid_to_supplier||0) > 0) sm = [{date: p.supplier_paid_date || p.supplier_due_date || dateInputStr, amount: p.paid_to_supplier}];
+      cm.forEach(x => adicionarMovimento('cliente', x.date, x.amount));
+      sm.forEach(x => adicionarMovimento('fornecedor', x.date, x.amount));
+      atualizarTotaisMovimentos();
+    }
+
+    async function salvarPedido(e) {
+      e.preventDefault();
+      const quoteOrig = document.getElementById('ped_quote_id_origin').value;
+      const clientMov = lerMovimentos('cliente'), supplierMov = lerMovimentos('fornecedor');
+      const paidClient = clientMov.reduce((s,x)=>s+x.amount,0), paidSupplier = supplierMov.reduce((s,x)=>s+x.amount,0);
+      const body = {
+        entity: document.getElementById('ped_entity').value, client: document.getElementById('ped_client').value,
+        product: document.getElementById('ped_product').value, production_type: document.getElementById('ped_production_type').value,
+        supplier: document.getElementById('ped_supplier').value||"", supplier_cost: parseFloat(document.getElementById('ped_supplier_cost').value)||0,
+        status_production: document.getElementById('ped_status_production').value, client_due_date: document.getElementById('ped_client_due_date').value||null,
+        supplier_due_date: document.getElementById('ped_supplier_due_date').value||null, sale_value: parseFloat(document.getElementById('ped_sale_value').value)||0,
+        paid_by_client: paidClient, paid_to_supplier: paidSupplier,
+        client_paid_date: clientMov.length ? clientMov[clientMov.length-1].date : null,
+        supplier_paid_date: supplierMov.length ? supplierMov[supplierMov.length-1].date : null,
+        client_payments: JSON.stringify(clientMov), supplier_payments: JSON.stringify(supplierMov),
+        is_recurrent: document.getElementById('ped_is_recurrent').checked
+      };
+      try {
+        const id = document.getElementById('ped_id').value;
+        const resp = await fetch(id ? `/api/orders/${id}` : '/api/orders', { method: id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        if(!resp.ok) throw new Error(await resp.text());
+        if(quoteOrig) await fetch(`/api/quotes/${quoteOrig}/status`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:"APROVADO"}) });
+      } catch(err) { alert("Erro ao salvar pedido: " + err.message); return; }
+      fecharModalPedido(); await carregarDados(); mudarSubAbaPedidos('ativos');
+    }
     async function deletarPedido(id) { if(confirm('Excluir?')) { await fetch(`/api/orders/${id}`, { method: 'DELETE' }); carregarDados(); } }
-    async function alterarStatusPedido(id, st) { if (st === 'ATENDIDO') { const p = pedidos.find(x => x.id == id); if(!p) return; document.getElementById('atender_ped_id').value = p.id; document.getElementById('atender_valor_recebido').value = Math.max((p.sale_value||0)-(p.paid_by_client||0),0).toFixed(2); document.getElementById('modal-atender').classList.remove('hidden'); return; } await fetch(`/api/orders/${id}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status_production: st }) }); carregarDados(); }
+    async function alterarStatusPedido(id, st) { if (st === 'ATENDIDO') { const p = pedidos.find(x => x.id == id); if(!p) return; document.getElementById('atender_ped_id').value = p.id; document.getElementById('atender_valor_recebido').value = Math.max((p.sale_value||0)-(p.paid_by_client||0),0).toFixed(2); document.getElementById('atender_data_recebido').value = dateInputStr; document.getElementById('modal-atender').classList.remove('hidden'); return; } await fetch(`/api/orders/${id}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status_production: st }) }); carregarDados(); }
     function fecharModalAtender() { document.getElementById('modal-atender').classList.add('hidden'); renderizarTelaUm(); }
-    async function confirmarAtendimentoPedido() { const id = document.getElementById('atender_ped_id').value; const p = pedidos.find(x => x.id == id); if (!p) return; await fetch(`/api/orders/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ entity: p.entity, client: p.client, product: p.product, production_type: p.production_type, supplier: p.supplier||"", supplier_cost: p.supplier_cost, status_production: 'ATENDIDO', client_due_date: p.client_due_date, supplier_due_date: p.supplier_due_date, sale_value: p.sale_value, paid_by_client: (p.paid_by_client||0)+(parseFloat(document.getElementById('atender_valor_recebido').value)||0), paid_to_supplier: p.paid_to_supplier, is_recurrent: p.is_recurrent }) }); fecharModalAtender(); carregarDados(); }
+    async function confirmarAtendimentoPedido() {
+      const id = document.getElementById('atender_ped_id').value; const p = pedidos.find(x => x.id == id); if (!p) return;
+      const valor = parseFloat(document.getElementById('atender_valor_recebido').value)||0;
+      const data = document.getElementById('atender_data_recebido').value || dateInputStr;
+      let cm = parseMovimentos(p.client_payments);
+      if(cm.length===0 && (p.paid_by_client||0)>0) cm=[{date:p.client_paid_date||p.client_due_date||data, amount:p.paid_by_client}];
+      if(valor>0) cm.push({date:data, amount:valor});
+      const sm = parseMovimentos(p.supplier_payments);
+      const body = {...p, status_production:'ATENDIDO', paid_by_client:cm.reduce((s,x)=>s+x.amount,0), client_paid_date:data, client_payments:JSON.stringify(cm), supplier_payments:p.supplier_payments||JSON.stringify(sm)};
+      delete body.id;
+      await fetch(`/api/orders/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      fecharModalAtender(); carregarDados();
+    }
 
     function renderizarCartoes() {
       const container = document.getElementById('box-cartoes'); if(!container) return; container.innerHTML = '';
@@ -474,7 +584,7 @@
       document.getElementById('resumo-a-pagar').innerText = `R$ ${tPagar.toFixed(2)}`; document.getElementById('resumo-pago').innerText = `R$ ${tPago.toFixed(2)}`; document.getElementById('resumo-total-mes').innerText = `R$ ${(tPagar + tPago).toFixed(2)}`;
     }
     
-    async function alterarStatusBill(id, is_paid) { await fetch(`/api/bills/${id}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_paid }) }); carregarDados(); }
+    async function alterarStatusBill(id, is_paid) { await fetch(`/api/bills/${id}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_paid, paid_date: is_paid ? dateInputStr : null }) }); carregarDados(); }
     
     function abrirModalBill() { document.getElementById('bill_id').value = ''; document.getElementById('bill_creditor').value = ''; document.getElementById('bill_installment_amount').value = ''; document.getElementById('bill_total_installments').value = '1'; document.getElementById('bill_total_amount').value = ''; document.getElementById('bill_due_date').value = dateInputStr; document.getElementById('bill_is_recurrent').checked = false; document.getElementById('box-edit-mode').classList.add('hidden'); const selE = document.getElementById('bill_entity'); selE.innerHTML = ''; profiles.forEach(p => selE.innerHTML += `<option value="${p.name}">${p.name}</option>`); const selC = document.getElementById('bill_card_id'); selC.innerHTML = '<option value="">Sem Cartão</option>'; cards.forEach(c => selC.innerHTML += `<option value="${c.id}">${c.name} (${c.entity})</option>`); toggleRecurrent(); document.getElementById('modal-bill').classList.remove('hidden'); }
     function fecharModalBill() { document.getElementById('modal-bill').classList.add('hidden'); }
@@ -494,35 +604,51 @@
     async function salvarSaldoInicial() { saldoInicial = parseFloat(document.getElementById('saldo-inicial-input').value) || 0; await fetch('/api/settings/balance', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ initial_balance: saldoInicial }) }); renderizarFluxo(); }
 
     function renderizarFluxo() {
-      const tb = document.getElementById('tabela-cronograma-fluxo'); const tf = document.getElementById('tfoot-cronograma-fluxo'); if(!tb || !tf) return;
-      const mesSel = document.getElementById('filtro-mes-fluxo').value; const perfilSel = document.getElementById('filtro-perfil-fluxo').value; if(!mesSel) return;
-      const [ano, mes] = mesSel.split('-').map(Number); const ultimoDia = new Date(ano, mes, 0).getDate();
-      
-      let saldoAtual = saldoInicial; const eventosAnteriores = [];
-      pedidos.filter(p => p.status_production !== 'INADIMPLENTE').forEach(p => { if(p.client_due_date && p.client_due_date < mesSel + '-01') eventosAnteriores.push({ val: p.sale_value, tipo: 'entrada' }); if(p.supplier_due_date && p.supplier_due_date < mesSel + '-01') eventosAnteriores.push({ val: p.supplier_cost, tipo: 'saida' }); });
-      bills.forEach(b => { if(b.due_date < mesSel + '-01') eventosAnteriores.push({ val: b.installment_amount, tipo: 'saida' }); });
-      eventosAnteriores.forEach(e => { if(e.tipo === 'entrada') saldoAtual += e.val; else saldoAtual -= e.val; });
+      const tb = document.getElementById('tabela-cronograma-fluxo'), tf = document.getElementById('tfoot-cronograma-fluxo'); if(!tb || !tf) return;
+      const mesSel = document.getElementById('filtro-mes-fluxo').value, perfilSel = document.getElementById('filtro-perfil-fluxo').value; if(!mesSel) return;
+      const inicioMes = mesSel + '-01';
+      let eventos = [];
 
-      let html = ''; let tEntrada = 0; let tSaida = 0;
-      for (let dia = 1; dia <= ultimoDia; dia++) {
-        const dataStr = `${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-        const eventosDia = [];
-        pedidos.filter(p => p.status_production !== 'INADIMPLENTE' && (perfilSel === 'ALL' || p.entity === perfilSel)).forEach(p => { if(p.client_due_date === dataStr && p.sale_value > 0) eventosDia.push({ desc: `Pedido: ${p.client}`, val: p.sale_value, tipo: 'entrada', origem: 'Venda' }); if(p.supplier_due_date === dataStr && p.supplier_cost > 0) eventosDia.push({ desc: `Forn: ${p.supplier}`, val: p.supplier_cost, tipo: 'saida', origem: 'Custo' }); });
-        bills.filter(b => (perfilSel === 'ALL' || b.entity === perfilSel)).forEach(b => { if(b.due_date === dataStr) eventosDia.push({ desc: b.creditor, val: b.installment_amount, tipo: 'saida', origem: 'Despesa' }); });
-        
-        if(eventosDia.length > 0) {
-          eventosDia.forEach((ev, idx) => {
-            if(ev.tipo === 'entrada') { saldoAtual += ev.val; tEntrada += ev.val; } else { saldoAtual -= ev.val; tSaida += ev.val; }
-            const rowClass = ev.tipo === 'entrada' ? 'bg-emerald-50/30' : 'bg-rose-50/30'; const vEnt = ev.tipo === 'entrada' ? `R$ ${ev.val.toFixed(2)}` : '-'; const vSai = ev.tipo === 'saida' ? `R$ ${ev.val.toFixed(2)}` : '-';
-            html += `<tr class="${rowClass}"><td class="p-2.5 font-bold text-slate-600">${idx===0 ? formatarDataBR(dataStr) : ''}</td><td class="p-2.5 text-xs text-slate-500 uppercase">${ev.origem}</td><td class="p-2.5 font-medium text-slate-800">${ev.desc}</td><td class="p-2.5 text-right font-bold text-emerald-600">${vEnt}</td><td class="p-2.5 text-right font-bold text-rose-600">${vSai}</td><td class="p-2.5 text-right font-black ${saldoAtual>=0?'text-blue-700':'text-rose-700'}">R$ ${saldoAtual.toFixed(2)}</td></tr>`;
-          });
-        }
-      }
+      pedidos.filter(p => p.status_production !== 'INADIMPLENTE' && (perfilSel==='ALL'||p.entity===perfilSel)).forEach(p => {
+        let cm = parseMovimentos(p.client_payments), sm = parseMovimentos(p.supplier_payments);
+        if(cm.length===0 && (p.paid_by_client||0)>0) cm=[{date:p.client_paid_date||p.client_due_date, amount:p.paid_by_client}].filter(x=>x.date);
+        if(sm.length===0 && (p.paid_to_supplier||0)>0) sm=[{date:p.supplier_paid_date||p.supplier_due_date, amount:p.paid_to_supplier}].filter(x=>x.date);
 
-      if(html === '') html = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Vazio.</td></tr>`;
-      tb.innerHTML = html;
-      tf.innerHTML = `<tr class="bg-slate-100 border-t-2 border-slate-300 font-black text-sm"><td colspan="3" class="p-3 text-right uppercase text-slate-600">Total do Mês Projetado:</td><td class="p-3 text-right text-emerald-700">R$ ${tEntrada.toFixed(2)}</td><td class="p-3 text-right text-rose-700">R$ ${tSaida.toFixed(2)}</td><td class="p-3 text-right ${saldoAtual>=0?'text-blue-700':'text-rose-700'}">R$ ${saldoAtual.toFixed(2)}</td></tr>`;
-      document.getElementById('saldo-projetado-fluxo').innerText = `R$ ${saldoAtual.toFixed(2)}`;
+        cm.forEach(x => eventos.push({date:x.date, desc:`${p.client} - recebimento`, val:Number(x.amount)||0, tipo:'entrada', origem:'Venda', realizado:true}));
+        sm.forEach(x => eventos.push({date:x.date, desc:`${p.supplier||'Fornecedor'} - pagamento`, val:Number(x.amount)||0, tipo:'saida', origem:'Fornecedor', realizado:true}));
+
+        const faltaCli = Math.max((p.sale_value||0) - cm.reduce((s,x)=>s+(Number(x.amount)||0),0), 0);
+        const faltaForn = Math.max((p.supplier_cost||0) - sm.reduce((s,x)=>s+(Number(x.amount)||0),0), 0);
+        if(faltaCli>0 && p.client_due_date) eventos.push({date:p.client_due_date, desc:`${p.client} - a receber`, val:faltaCli, tipo:'entrada', origem:'Venda', realizado:false});
+        if(faltaForn>0 && p.supplier_due_date) eventos.push({date:p.supplier_due_date, desc:`${p.supplier||'Fornecedor'} - a pagar`, val:faltaForn, tipo:'saida', origem:'Fornecedor', realizado:false});
+      });
+
+      bills.filter(b => perfilSel==='ALL'||b.entity===perfilSel).forEach(b => {
+        eventos.push({date:(b.is_paid && b.paid_date) ? b.paid_date : b.due_date, desc:b.creditor, val:b.installment_amount||0, tipo:'saida', origem:'Despesa', realizado:!!b.is_paid});
+      });
+
+      eventos = eventos.filter(e=>e.date && e.val>0).sort((a,b)=>a.date.localeCompare(b.date) || Number(b.realizado)-Number(a.realizado));
+      let saldoAtual = saldoInicial;
+      // Caixa real anterior ao mês: somente movimentações efetivamente realizadas.
+      eventos.filter(e=>e.realizado && e.date<inicioMes).forEach(e=> saldoAtual += e.tipo==='entrada' ? e.val : -e.val);
+
+      const eventosMes = eventos.filter(e=>e.date.startsWith(mesSel));
+      let html='', tEntrada=0, tSaida=0;
+      eventosMes.forEach(ev => {
+        // O saldo projetado considera realizado + pendente; o ícone mostra a diferença.
+        saldoAtual += ev.tipo==='entrada' ? ev.val : -ev.val;
+        if(ev.tipo==='entrada') tEntrada += ev.val; else tSaida += ev.val;
+        const status = ev.realizado
+          ? '<span title="Realizado" class="text-emerald-600 font-black text-lg">✓</span>'
+          : '<span title="Pendente" class="text-rose-600 font-black text-lg">⚠</span>';
+        const rowClass = ev.realizado ? (ev.tipo==='entrada'?'bg-emerald-50/40':'bg-slate-50') : 'bg-rose-50/50';
+        html += `<tr class="${rowClass}"><td class="p-2.5 font-bold text-slate-600">${formatarDataBR(ev.date)}</td><td class="p-2.5 text-center">${status}</td><td class="p-2.5 text-xs text-slate-500 uppercase">${ev.origem}</td><td class="p-2.5 font-medium text-slate-800">${ev.desc}</td><td class="p-2.5 text-right font-bold text-emerald-600">${ev.tipo==='entrada'?'R$ '+ev.val.toFixed(2):'-'}</td><td class="p-2.5 text-right font-bold text-rose-600">${ev.tipo==='saida'?'R$ '+ev.val.toFixed(2):'-'}</td><td class="p-2.5 text-right font-black ${saldoAtual>=0?'text-blue-700':'text-rose-700'}">R$ ${saldoAtual.toFixed(2)}</td></tr>`;
+      });
+
+      if(!html) html='<tr><td colspan="7" class="p-4 text-center text-slate-400">Vazio.</td></tr>';
+      tb.innerHTML=html;
+      tf.innerHTML=`<tr class="bg-slate-100 border-t-2 border-slate-300 font-black text-sm"><td colspan="4" class="p-3 text-right uppercase text-slate-600">Total do Mês Projetado:</td><td class="p-3 text-right text-emerald-700">R$ ${tEntrada.toFixed(2)}</td><td class="p-3 text-right text-rose-700">R$ ${tSaida.toFixed(2)}</td><td class="p-3 text-right ${saldoAtual>=0?'text-blue-700':'text-rose-700'}">R$ ${saldoAtual.toFixed(2)}</td></tr>`;
+      document.getElementById('saldo-projetado-fluxo').innerText=`R$ ${saldoAtual.toFixed(2)}`;
     }
 
     function mudarAba(aba) {
