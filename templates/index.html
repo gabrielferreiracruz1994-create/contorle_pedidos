@@ -10,7 +10,8 @@
   <style>
     .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
     .subtab-active { background-color: #2563eb !important; color: white !important; font-weight: 700 !important; }
-    .table-container-scroll { max-height: 550px; overflow-y: auto; overflow-x: auto; }
+    .subtab-fin-active { background-color: #e11d48 !important; color: white !important; font-weight: 700 !important; }
+    .table-container-scroll { max-height: 500px; overflow-y: auto; overflow-x: auto; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-12">
@@ -113,9 +114,15 @@
           <div><span class="text-[10px] font-bold uppercase text-slate-400">Total do Mês (Geral)</span><div id="resumo-total-mes" class="text-xl font-black text-white">R$ 0,00</div></div>
         </div>
       </div>
-      <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
-        <div><h2 class="text-base font-bold text-slate-800">Contas e Despesas</h2></div>
-        <div class="flex gap-3">
+      
+      <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl border border-slate-200 gap-3">
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <button onclick="mudarSubAbaFinanceiro('pendentes')" id="subtab-fin-pendentes" class="px-3 py-1.5 rounded-md text-xs font-bold subtab-fin-active transition">Pendentes (<span id="count-fin-pendentes">0</span>)</button>
+            <button onclick="mudarSubAbaFinanceiro('quitados')" id="subtab-fin-quitados" class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-600 hover:bg-white transition">Quitados (<span id="count-fin-quitados">0</span>)</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3 items-center">
           <select id="filtro-perfil-fin" onchange="renderizarBills()" class="bg-slate-100 font-bold text-xs p-2 rounded-lg border border-slate-200 cursor-pointer"><option value="ALL">TODOS OS PERFIS</option></select>
           <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
             <button onclick="navegarMes('filtro-mes-fin', -1); renderizarBills();" class="p-1.5"><i class="fa-solid fa-chevron-left"></i></button>
@@ -125,6 +132,7 @@
           <button onclick="abrirModalBill()" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium">Nova Conta</button>
         </div>
       </div>
+
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm table-container-scroll">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b">
@@ -293,7 +301,7 @@
 
   <script>
     let quotes = []; let pedidos = []; let bills = []; let profiles = []; let cards = []; let saldoInicial = 0.0;
-    let subAbaPedidosAtual = 'ativos'; let quoteTotalCache = 0.0; let billToDeleteId = null;
+    let subAbaPedidosAtual = 'ativos'; let subAbaFinAtual = 'pendentes'; let quoteTotalCache = 0.0; let billToDeleteId = null;
     const hoje = new Date();
     const mesAtualStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
     const dateInputStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
@@ -384,6 +392,16 @@
       renderizarTelaUm();
     }
 
+    function mudarSubAbaFinanceiro(sub) {
+      subAbaFinAtual = sub;
+      const ids = ['pendentes', 'quitados'];
+      ids.forEach(id => {
+        const btn = document.getElementById(`subtab-fin-${id}`);
+        btn.className = `px-3 py-1.5 rounded-md text-xs font-bold transition ${id===sub?'subtab-fin-active':'text-slate-600 hover:bg-white'}`;
+      });
+      renderizarBills();
+    }
+
     function renderizarTelaUm() {
       const container = document.getElementById('tabela-container'); const mesSel = document.getElementById('filtro-mes-pedidos')?.value || ''; const termo = (document.getElementById('busca-pedido')?.value || '').toLowerCase();
       document.getElementById('count-orcamentos').innerText = quotes.filter(q => q.status === 'PENDENTE').length;
@@ -403,7 +421,6 @@
       } else {
         document.getElementById('cards-pedidos').classList.remove('hidden');
         
-        // CORREÇÃO APLICADA: O pedido aparece se bater o termo E se houver vencimento OU qualquer movimento no mês selecionado
         const peds = pedidos.filter(p => { 
           const bateBusca = (p.client||'').toLowerCase().includes(termo) || (p.product||'').toLowerCase().includes(termo); 
           const cm = parseMovimentos(p.client_payments);
@@ -580,19 +597,34 @@
 
     function renderizarBills() {
       const tb = document.getElementById('tabela-bills'); if(!tb) return;
-      const mesSel = document.getElementById('filtro-mes-fin')?.value || ''; const perfilSel = document.getElementById('filtro-perfil-fin')?.value || 'ALL';
-      const filtradas = bills.filter(b => (mesSel === '' || b.due_date.startsWith(mesSel)) && (perfilSel === 'ALL' || b.entity === perfilSel));
+      const mesSel = document.getElementById('filtro-mes-fin')?.value || ''; 
+      const perfilSel = document.getElementById('filtro-perfil-fin')?.value || 'ALL';
+      
+      const mesFiltrado = bills.filter(b => (mesSel === '' || b.due_date.startsWith(mesSel)) && (perfilSel === 'ALL' || b.entity === perfilSel));
+      
+      const countPendentes = mesFiltrado.filter(b => !b.is_paid).length;
+      const countQuitados = mesFiltrado.filter(b => b.is_paid).length;
+      
+      document.getElementById('count-fin-pendentes').innerText = countPendentes;
+      document.getElementById('count-fin-quitados').innerText = countQuitados;
+
+      const filtradas = mesFiltrado.filter(b => subAbaFinAtual === 'quitados' ? b.is_paid : !b.is_paid);
       filtradas.sort((a,b) => a.due_date.localeCompare(b.due_date));
-      let tPagar = 0; let tPago = 0; tb.innerHTML = '';
-      if(filtradas.length === 0) tb.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Vazio.</td></tr>`;
+
+      let tPagar = 0; let tPago = 0; 
+      mesFiltrado.forEach(b => { if(b.is_paid) tPago += b.installment_amount; else tPagar += b.installment_amount; });
+
+      tb.innerHTML = '';
+      if(filtradas.length === 0) tb.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhum registro encontrado.</td></tr>`;
       else {
         filtradas.forEach(b => {
-          if(b.is_paid) tPago += b.installment_amount; else tPagar += b.installment_amount;
           const cartao = cards.find(c => c.id === b.card_id); const cName = cartao ? `<span class="bg-purple-100 text-purple-800 text-[10px] px-1 py-0.5 rounded">${cartao.name}</span>` : '';
           tb.innerHTML += `<tr><td class="p-3 font-bold">${b.creditor}</td><td class="p-3"><div class="text-[10px] font-bold text-slate-500 uppercase">${b.entity}</div>${cName}</td><td class="p-3 text-xs">${b.installment_number}/${b.total_installments}</td><td class="p-3 text-xs font-bold ${new Date(b.due_date) < new Date() && !b.is_paid ? 'text-rose-600' : 'text-slate-600'}">${formatarDataBR(b.due_date)}</td><td class="p-3 text-right font-black ${b.is_paid ? 'text-slate-400 line-through' : 'text-rose-600'}">R$ ${b.installment_amount.toFixed(2)}</td><td class="p-3 text-center"><input type="checkbox" ${b.is_paid?'checked':''} onchange="alterarStatusBill(${b.id}, this.checked)" class="w-4 h-4 cursor-pointer accent-emerald-600"></td><td class="p-3 text-center"><button onclick="editarBill(${b.id})" class="text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button><button onclick="abrirModalDeleteBill(${b.id})" class="text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button></td></tr>`;
         });
       }
-      document.getElementById('resumo-a-pagar').innerText = `R$ ${tPagar.toFixed(2)}`; document.getElementById('resumo-pago').innerText = `R$ ${tPago.toFixed(2)}`; document.getElementById('resumo-total-mes').innerText = `R$ ${(tPagar + tPago).toFixed(2)}`;
+      document.getElementById('resumo-a-pagar').innerText = `R$ ${tPagar.toFixed(2)}`; 
+      document.getElementById('resumo-pago').innerText = `R$ ${tPago.toFixed(2)}`; 
+      document.getElementById('resumo-total-mes').innerText = `R$ ${(tPagar + tPago).toFixed(2)}`;
     }
     
     async function alterarStatusBill(id, is_paid) { await fetch(`/api/bills/${id}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_paid, paid_date: is_paid ? dateInputStr : null }) }); carregarDados(); }
