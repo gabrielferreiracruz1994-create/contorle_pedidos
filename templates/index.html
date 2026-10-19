@@ -11,7 +11,6 @@
     .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
     .subtab-active { background-color: #2563eb !important; color: white !important; font-weight: 700 !important; }
     .subtab-fin-active { background-color: #e11d48 !important; color: white !important; font-weight: 700 !important; }
-    /* Força a altura máxima exata e exibe a barra de rolagem vertical */
     .table-container-scroll { max-height: 450px !important; overflow-y: scroll !important; overflow-x: auto !important; }
   </style>
 </head>
@@ -137,7 +136,7 @@
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm table-container-scroll">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b sticky top-0 z-10 shadow-sm">
-            <tr><th class="p-2.5">Credor</th><th class="p-2.5">Perfil/Cartão</th><th class="p-2.5">Parcela</th><th class="p-2.5">Venc.</th><th class="p-2.5 text-right">Valor</th><th class="p-2.5 text-center">Status</th><th class="p-2.5 text-center">Ações</th></tr>
+            <tr><th class="p-2.5">Credor</th><th class="p-2.5">Perfil/Cartão</th><th class="p-2.5">Tipo</th><th class="p-2.5">Venc.</th><th class="p-2.5 text-right">Valor</th><th class="p-2.5 text-center">Status</th><th class="p-2.5 text-center">Ações</th></tr>
           </thead>
           <tbody id="tabela-bills" class="divide-y divide-slate-100"></tbody>
         </table>
@@ -601,7 +600,59 @@
       const mesSel = document.getElementById('filtro-mes-fin')?.value || ''; 
       const perfilSel = document.getElementById('filtro-perfil-fin')?.value || 'ALL';
       
-      const mesFiltrado = bills.filter(b => (mesSel === '' || b.due_date.startsWith(mesSel)) && (perfilSel === 'ALL' || b.entity === perfilSel));
+      // 1. Contas Manuais (Bills)
+      let listaFinanceira = [...bills.map(b => ({...b, tipoOrigem: 'Manual'}))];
+
+      // 2. Integrar Pedidos na Aba Financeira (Contas a Pagar a Fornecedores & Contas a Receber de Clientes)
+      pedidos.forEach(p => {
+        if(p.status_production === 'INADIMPLENTE') return;
+        
+        // Custo com Fornecedor (Se houver fornecedor e custo)
+        if(p.supplier && p.supplier_cost > 0) {
+          const totalForn = p.supplier_cost;
+          const pagoForn = p.paid_to_supplier || 0;
+          const faltaForn = Math.max(totalForn - pagoForn, 0);
+          const vencForn = p.supplier_due_date || p.client_due_date || dateInputStr;
+          
+          if(faltaForn > 0) {
+            listaFinanceira.push({
+              id: `ped-sup-${p.id}`,
+              creditor: `${p.supplier} (Fornecedor: ${p.client})`,
+              entity: p.entity,
+              installment_number: 1,
+              total_installments: 1,
+              installment_amount: faltaForn,
+              due_date: vencForn,
+              is_paid: false,
+              tipoOrigem: 'Pedido (Fornecedor)',
+              orderIdRef: p.id
+            });
+          }
+        }
+
+        // Saldo a Receber do Cliente
+        const totalCliente = p.sale_value || 0;
+        const pagoCliente = p.paid_by_client || 0;
+        const faltaCliente = Math.max(totalCliente - pagoCliente, 0);
+        const vencCliente = p.client_due_date || dateInputStr;
+
+        if(faltaCliente > 0) {
+          listaFinanceira.push({
+            id: `ped-cli-${p.id}`,
+            creditor: `[Receber] ${p.client} (${p.product})`,
+            entity: p.entity,
+            installment_number: 1,
+            total_installments: 1,
+            installment_amount: faltaCliente,
+            due_date: vencCliente,
+            is_paid: false,
+            tipoOrigem: 'Pedido (A Receber)',
+            orderIdRef: p.id
+          });
+        }
+      });
+
+      const mesFiltrado = listaFinanceira.filter(b => (mesSel === '' || (b.due_date && b.due_date.startsWith(mesSel))) && (perfilSel === 'ALL' || b.entity === perfilSel));
       
       const countPendentes = mesFiltrado.filter(b => !b.is_paid).length;
       const countQuitados = mesFiltrado.filter(b => b.is_paid).length;
@@ -610,7 +661,7 @@
       document.getElementById('count-fin-quitados').innerText = countQuitados;
 
       const filtradas = mesFiltrado.filter(b => subAbaFinAtual === 'quitados' ? b.is_paid : !b.is_paid);
-      filtradas.sort((a,b) => a.due_date.localeCompare(b.due_date));
+      filtradas.sort((a,b) => (a.due_date||'').localeCompare(b.due_date||''));
 
       let tPagar = 0; let tPago = 0; 
       mesFiltrado.forEach(b => { if(b.is_paid) tPago += b.installment_amount; else tPagar += b.installment_amount; });
@@ -619,8 +670,16 @@
       if(filtradas.length === 0) tb.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhum registro encontrado.</td></tr>`;
       else {
         filtradas.forEach(b => {
-          const cartao = cards.find(c => c.id === b.card_id); const cName = cartao ? `<span class="bg-purple-100 text-purple-800 text-[10px] px-1 py-0.5 rounded">${cartao.name}</span>` : '';
-          tb.innerHTML += `<tr><td class="p-2.5 font-bold">${b.creditor}</td><td class="p-2.5"><div class="text-[10px] font-bold text-slate-500 uppercase">${b.entity}</div>${cName}</td><td class="p-2.5 text-xs">${b.installment_number}/${b.total_installments}</td><td class="p-2.5 text-xs font-bold ${new Date(b.due_date) < new Date() && !b.is_paid ? 'text-rose-600' : 'text-slate-600'}">${formatarDataBR(b.due_date)}</td><td class="p-2.5 text-right font-black ${b.is_paid ? 'text-slate-400 line-through' : 'text-rose-600'}">R$ ${b.installment_amount.toFixed(2)}</td><td class="p-2.5 text-center"><input type="checkbox" ${b.is_paid?'checked':''} onchange="alterarStatusBill(${b.id}, this.checked)" class="w-4 h-4 cursor-pointer accent-emerald-600"></td><td class="p-2.5 text-center"><button onclick="editarBill(${b.id})" class="text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button><button onclick="abrirModalDeleteBill(${b.id})" class="text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+          const badgeTipo = b.tipoOrigem === 'Manual' ? '<span class="bg-slate-100 text-slate-700 text-[9px] px-1.5 py-0.5 rounded font-bold">Despesa</span>' : (b.tipoOrigem.includes('Fornecedor') ? '<span class="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded font-bold">Fornecedor</span>' : '<span class="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded font-bold">Recebimento</span>');
+          
+          let acoesHtml = `<button onclick="editarBill(${b.id})" class="text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button><button onclick="abrirModalDeleteBill(${b.id})" class="text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button>`;
+          let checkHtml = `<input type="checkbox" ${b.is_paid?'checked':''} onchange="alterarStatusBill('${b.id}', this.checked)" class="w-4 h-4 cursor-pointer accent-emerald-600">`;
+          
+          if(typeof b.id === 'string' && b.id.startsWith('ped-')) {
+            acoesHtml = `<span class="text-[10px] text-slate-400 italic">Gerenciado no Pedido</span>`;
+          }
+
+          tb.innerHTML += `<tr><td class="p-2.5 font-bold">${b.creditor}</td><td class="p-2.5"><div class="text-[10px] font-bold text-slate-500 uppercase">${b.entity}</div></td><td class="p-2.5">${badgeTipo}</td><td class="p-2.5 text-xs font-bold ${new Date(b.due_date) < new Date() && !b.is_paid ? 'text-rose-600' : 'text-slate-600'}">${formatarDataBR(b.due_date)}</td><td class="p-2.5 text-right font-black ${b.is_paid ? 'text-slate-400 line-through' : (b.tipoOrigem.includes('Receber')?'text-emerald-600':'text-rose-600')}">R$ ${b.installment_amount.toFixed(2)}</td><td class="p-2.5 text-center">${checkHtml}</td><td class="p-2.5 text-center">${acoesHtml}</td></tr>`;
         });
       }
       document.getElementById('resumo-a-pagar').innerText = `R$ ${tPagar.toFixed(2)}`; 
@@ -628,7 +687,15 @@
       document.getElementById('resumo-total-mes').innerText = `R$ ${(tPagar + tPago).toFixed(2)}`;
     }
     
-    async function alterarStatusBill(id, is_paid) { await fetch(`/api/bills/${id}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_paid, paid_date: is_paid ? dateInputStr : null }) }); carregarDados(); }
+    async function alterarStatusBill(id, is_paid) { 
+      if(typeof id === 'string' && id.startsWith('ped-')) {
+        alert("Para dar baixa em valores de pedidos, utilize os botões e campos de pagamentos parciais direto na Aba 1 (Pedidos).");
+        carregarDados();
+        return;
+      }
+      await fetch(`/api/bills/${id}/status`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ is_paid, paid_date: is_paid ? dateInputStr : null }) }); 
+      carregarDados(); 
+    }
     
     function abrirModalBill() { document.getElementById('bill_id').value = ''; document.getElementById('bill_creditor').value = ''; document.getElementById('bill_installment_amount').value = ''; document.getElementById('bill_total_installments').value = '1'; document.getElementById('bill_total_amount').value = ''; document.getElementById('bill_due_date').value = dateInputStr; document.getElementById('bill_is_recurrent').checked = false; document.getElementById('box-edit-mode').classList.add('hidden'); const selE = document.getElementById('bill_entity'); selE.innerHTML = ''; profiles.forEach(p => selE.innerHTML += `<option value="${p.name}">${p.name}</option>`); const selC = document.getElementById('bill_card_id'); selC.innerHTML = '<option value="">Sem Cartão</option>'; cards.forEach(c => selC.innerHTML += `<option value="${c.id}">${c.name} (${c.entity})</option>`); toggleRecurrent(); document.getElementById('modal-bill').classList.remove('hidden'); }
     function fecharModalBill() { document.getElementById('modal-bill').classList.add('hidden'); }
