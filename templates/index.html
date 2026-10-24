@@ -111,7 +111,7 @@
           <div><span class="text-[10px] font-bold uppercase text-emerald-700">Total Pago (Quitado)</span><div id="resumo-pago" class="text-xl font-black text-emerald-700">R$ 0,00</div></div>
         </div>
         <div class="bg-slate-800 text-white rounded-xl p-4 flex justify-between items-center">
-          <div><span class="text-[10px] font-bold uppercase text-slate-400">Total do Mês (Geral)</span><div id="resumo-total-mes" class="text-xl font-black text-white">R$ 0,00</div></div>
+          <div><span class="text-[10px] font-bold uppercase text-slate-400">Total Despesas do Mês</span><div id="resumo-total-mes" class="text-xl font-black text-white">R$ 0,00</div></div>
         </div>
       </div>
       
@@ -600,14 +600,11 @@
       const mesSel = document.getElementById('filtro-mes-fin')?.value || ''; 
       const perfilSel = document.getElementById('filtro-perfil-fin')?.value || 'ALL';
       
-      // 1. Contas Manuais (Bills)
       let listaFinanceira = [...bills.map(b => ({...b, tipoOrigem: 'Manual'}))];
 
-      // 2. Integrar Pedidos na Aba Financeira (Contas a Pagar a Fornecedores & Contas a Receber de Clientes)
       pedidos.forEach(p => {
         if(p.status_production === 'INADIMPLENTE') return;
         
-        // Custo com Fornecedor (Se houver fornecedor e custo)
         if(p.supplier && p.supplier_cost > 0) {
           const totalForn = p.supplier_cost;
           const pagoForn = p.paid_to_supplier || 0;
@@ -630,7 +627,6 @@
           }
         }
 
-        // Saldo a Receber do Cliente
         const totalCliente = p.sale_value || 0;
         const pagoCliente = p.paid_by_client || 0;
         const faltaCliente = Math.max(totalCliente - pagoCliente, 0);
@@ -664,7 +660,18 @@
       filtradas.sort((a,b) => (a.due_date||'').localeCompare(b.due_date||''));
 
       let tPagar = 0; let tPago = 0; 
-      mesFiltrado.forEach(b => { if(b.is_paid) tPago += b.installment_amount; else tPagar += b.installment_amount; });
+      
+      // Correção aplicada: Soma no "A Pagar" apenas o que NÃO é recebimento
+      mesFiltrado.forEach(b => {
+        const isRecebimento = b.tipoOrigem === 'Pedido (A Receber)' || (b.creditor && b.creditor.startsWith('[Receber]'));
+        if(b.is_paid) {
+          tPago += b.installment_amount;
+        } else {
+          if(!isRecebimento) {
+            tPagar += b.installment_amount;
+          }
+        }
+      });
 
       tb.innerHTML = '';
       if(filtradas.length === 0) tb.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhum registro encontrado.</td></tr>`;
@@ -751,7 +758,7 @@
           ? '<span title="Realizado" class="text-emerald-600 font-black text-lg">✓</span>'
           : '<span title="Pendente" class="text-rose-600 font-black text-lg">⚠</span>';
         const rowClass = ev.realizado ? (ev.tipo==='entrada'?'bg-emerald-50/40':'bg-slate-50') : 'bg-rose-50/50';
-        html += `<tr class="${rowClass}"><td class="p-2.5 font-bold text-slate-600">${formatarDataBR(ev.date)}</td><td class="p-2.5 text-center">${status}</td><td class="p-2.5 text-xs text-slate-500 uppercase">${ev.origem}</td><td class="p-2.5 font-medium text-slate-800">${ev.desc}</td><td class="p-2.5 text-right font-bold text-emerald-600">${ev.tipo==='entrada'?'R$ '+ev.val.toFixed(2):'-'}</td><td class="p-2.5 text-right font-bold text-rose-600">${ev.tipo==='saida'?'R$ '+ev.val.toFixed(2):'-'}</td><td class="p-2.5 text-right font-black ${saldoAtual>=0?'text-blue-700':'text-rose-700'}">R$ ${saldoAtual.toFixed(2)}</td></tr>`;
+        html += `<tr class="${rowClass}"><td class="p-2.5 font-bold text-slate-600">${formatarDataBR(ev.date)}</td><td class="p-2.5 text-center">${status}</td><td class="p-2.5 text-xs text-slate-500 uppercase">${ev.origem}</td><td class="p-2.5 font-medium text-slate-800">${ev.desc}</td><td class="p-2.5 text-right font-bold text-emerald-600">${ev.tipo==='entrada'?'R$ '+ev.val.toFixed(2):'-'}</td><td class="p-2.5 text-right font-bold text-rose-600">${ev.tipo==='saida'?'R$ '+ev.val.toFixed(2):'-'}</td><td class="p-2.5 text-right font-black ${saldoAtual>=0?'text-blue-700':'text-rose-700'}">R$ saldoAtual.toFixed(2)</td></tr>`;
       });
 
       if(!html) html='<tr><td colspan="7" class="p-4 text-center text-slate-400">Vazio.</td></tr>';
